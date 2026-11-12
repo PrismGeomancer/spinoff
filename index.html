@@ -1,0 +1,2193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Spinoff: Every hit gets a spinoff.</title>
+<meta name="description" content="Pick a Solana coin that's been around. Pitch its spinoff. Holders of the parent can claim seats. Unofficial pitches, live market data, no custody.">
+<meta property="og:title" content="Spinoff: Every hit gets a spinoff.">
+<meta property="og:description" content="One coin in, one spinoff out. Pitch it, sign it, claim a seat. Live data, no custody.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#07080C">
+<link rel="icon" type="image/png" href="./favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#07080C; --panel:#0E1118; --line:#232838; --bone:#EDEBE6; --dim:#8B90A3;
+  --cyan:#19F0FF; --magenta:#FF2BD6; --amber:#FFB000; --green:#39FF88; --bad:#FF5A4D; --violet:#A98BFF;
+  --f-display:'Anton','Impact','Haettenschweiler','Arial Narrow Bold',sans-serif;
+  --f-osd:'VT323','Courier New',monospace;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --f-body:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --settle:cubic-bezier(.2,.8,.2,1);
+  --glass:22px;
+  --gut:clamp(16px,4vw,40px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--void);color:var(--bone);font-family:var(--f-body);-webkit-font-smoothing:antialiased;overflow:hidden}
+body{font-size:16px;line-height:1.5}
+button,input,textarea{font:inherit;color:inherit}
+a{color:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus{outline:none}
+:focus-visible{outline:3px solid var(--amber);outline-offset:3px;border-radius:8px}
+[hidden]{display:none!important}
+
+/* ---------- overlays: noise + bars ---------- */
+#noise{position:fixed;inset:0;width:100%;height:100%;image-rendering:pixelated;pointer-events:none;z-index:60;opacity:.05;mix-blend-mode:screen}
+.vig{position:fixed;inset:0;pointer-events:none;z-index:59;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+.scan{position:fixed;inset:0;pointer-events:none;z-index:58;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);opacity:.5}
+body.nofx #noise,body.nofx .scan{display:none}
+.bars{display:block;height:3px;background:linear-gradient(90deg,var(--bone) 0 14.28%,#FFD400 0 28.56%,var(--cyan) 0 42.84%,var(--green) 0 57.12%,var(--magenta) 0 71.4%,var(--bad) 0 85.68%,#2B4BFF 0)}
+
+/* ---------- boot ---------- */
+#boot{position:fixed;inset:0;z-index:90;background:#000;display:grid;place-items:center;transition:opacity .5s var(--settle)}
+#boot.done{opacity:0;pointer-events:none}
+#boot .bt{text-align:center;opacity:0;animation:bootin .5s ease .75s forwards}
+@keyframes bootin{to{opacity:1}}
+#boot .l1{font-family:var(--f-display);font-size:clamp(30px,6vw,56px);letter-spacing:.06em;text-transform:uppercase}
+#boot .l2{font-family:var(--f-osd);font-size:26px;color:var(--green);margin-top:6px}
+#boot .bars{width:min(320px,70vw);margin:18px auto 0;clip-path:inset(0 100% 0 0);animation:bootbars 1.4s steps(7,end) .95s forwards}
+@keyframes bootbars{to{clip-path:inset(0 0 0 0)}}
+#boot .ln{position:absolute;left:0;right:0;top:50%;height:2px;background:#fff;transform:scaleX(0);box-shadow:0 0 18px #fff;animation:bootln .75s var(--settle) .15s forwards}
+@keyframes bootln{0%{transform:scaleX(0);height:2px}60%{transform:scaleX(1);height:2px;opacity:1}100%{transform:scaleX(1);height:2px;opacity:0}}
+body.nofx #boot .ln{display:none}
+body.nofx #boot .bt{animation-duration:.01ms;animation-delay:0s}
+body.nofx #boot .bars{animation-duration:.01ms;animation-delay:0s}
+/* intro: the room UI waits for the TV to warm up */
+.hero,.ctl,.counter,.hint{transition:opacity .9s ease}
+body.intro .hero,body.intro .ctl,body.intro .counter,body.intro .hint,body.intro .keys{opacity:0;pointer-events:none}
+
+/* ---------- room ---------- */
+.room{position:fixed;inset:0;overflow:hidden;background:var(--void)}
+#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.fallback{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:var(--gut)}
+body.no3d .fallback{display:flex}
+@media(min-width:900px){.fallback .crt{transform:translateX(16vw)}.fallback p{transform:translateX(16vw)}}
+.crt{position:relative;width:min(520px,86vw);aspect-ratio:4/3;border:3px solid var(--bone);border-radius:34px;background:#000;padding:16px;box-shadow:0 0 0 1px var(--line),0 30px 80px rgba(25,240,255,.12),inset 0 0 40px rgba(0,0,0,.8)}
+.crt__s{height:100%;border-radius:24px;overflow:hidden;position:relative;background:linear-gradient(90deg,var(--bone) 0 14.28%,#FFD400 0 28.56%,var(--cyan) 0 42.84%,var(--green) 0 57.12%,var(--magenta) 0 71.4%,var(--bad) 0 85.68%,#2B4BFF 0);display:grid;place-items:center}
+.crt__s::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.25) 0 1px,transparent 1px 3px)}
+.crt__t{position:relative;z-index:1;background:#000;color:var(--green);font-family:var(--f-osd);font-size:30px;padding:6px 14px;text-align:center;line-height:1.1}
+.crt__t small{display:block;font-size:20px;color:var(--bone)}
+.fallback p{font-family:var(--f-osd);font-size:22px;color:var(--dim);text-align:center;margin:0 0 60px;padding:0 var(--gut)}
+@media(max-width:380px){.hero .brand span{display:none}}
+
+.hero{position:absolute;left:var(--gut);top:calc(var(--gut) + 8px);z-index:5;max-width:min(400px,calc(100vw - 2*var(--gut)));pointer-events:none}
+.brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--f-display);font-size:22px;letter-spacing:.08em;text-transform:uppercase;pointer-events:auto;min-height:44px}
+.brand img{width:34px;height:34px;display:block}
+.hero__card{margin-top:10px;background:rgba(14,17,24,.78);backdrop-filter:blur(6px);border:3px solid var(--bone);border-radius:var(--glass);padding:18px 20px 16px;box-shadow:inset 0 0 0 1px var(--line),inset 0 0 30px rgba(25,240,255,.05)}
+.ttl{font-family:var(--f-display);text-transform:uppercase;font-size:clamp(30px,3.7vw,50px);line-height:1;letter-spacing:.015em;margin:0}
+.ttl span{display:block}
+.acc{font-family:var(--f-display);color:var(--bone);text-shadow:-3px 0 var(--cyan),3px 0 var(--magenta)}
+.hero__card p{margin:10px 0 0;color:var(--dim);font-size:15px;max-width:34ch}
+.osd{position:absolute;left:0;top:0;z-index:6;font-family:var(--f-osd);font-size:28px;color:var(--green);text-shadow:0 0 6px rgba(57,255,136,.6);pointer-events:none}
+.ctl{position:absolute;right:var(--gut);top:calc(var(--gut) + 8px);z-index:6;display:flex;gap:8px}
+.chip{font-family:var(--f-osd);font-size:20px;line-height:1;color:var(--bone);background:rgba(14,17,24,.8);border:2px solid var(--line);border-radius:12px;padding:8px 12px;min-height:44px;cursor:pointer;transition:border-color .15s,transform .1s}
+.chip:hover{border-color:var(--bone)}
+.chip:active{transform:translateY(3px)}
+.chip[aria-pressed="true"]{color:var(--green);border-color:var(--green)}
+.counter{position:absolute;left:var(--gut);bottom:calc(var(--gut) - 2px);z-index:6;font-family:var(--f-osd);font-size:22px;color:var(--green);text-shadow:0 0 6px rgba(57,255,136,.5)}
+.hint{position:absolute;left:50%;bottom:calc(var(--gut) + 78px);transform:translateX(-50%);z-index:6;margin:0;font-family:var(--f-osd);font-size:21px;color:var(--dim);text-align:center;width:max-content;max-width:90vw;pointer-events:none}
+body.has3d .hint{bottom:calc(var(--gut) - 4px)}
+.tip{position:fixed;z-index:70;pointer-events:none;font-family:var(--f-osd);font-size:21px;background:var(--bone);color:var(--void);padding:3px 10px;border-radius:8px;transform:translate(-50%,-140%);opacity:0;transition:opacity .12s;white-space:nowrap}
+.tip.on{opacity:1}
+.caption{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--gut) + 34px);z-index:6;font-family:var(--f-osd);font-size:22px;color:var(--bone);background:rgba(0,0,0,.7);padding:2px 12px;border-radius:6px;pointer-events:none;opacity:0;transition:opacity .3s}
+.caption.on{opacity:1}
+
+/* DOM remote keys (touch / narrow / no WebGL) */
+.keys{position:absolute;z-index:7;left:50%;transform:translateX(-50%);bottom:calc(var(--gut) + 28px);margin:0;list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:14px 14px;padding:30px 22px 23px;width:min(414px,calc(100vw - 2*var(--gut)));border-radius:32px 32px 40px 40px;
+  background:linear-gradient(180deg,#e2dbc8 0%,#cdc5af 55%,#b6ae97 100%);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.75),inset 0 -5px 8px rgba(0,0,0,.28),inset 0 0 0 2px rgba(0,0,0,.14),0 3px 0 #7d765f,0 22px 34px rgba(0,0,0,.6);transition:opacity .9s ease}
+.keys::before{content:"";position:absolute;top:11px;left:50%;width:58px;height:10px;transform:translateX(-50%);border-radius:6px;background:linear-gradient(#6b1216,#2a0507);box-shadow:inset 0 1px 3px rgba(0,0,0,.85),0 1px 0 rgba(255,255,255,.55)}
+.keys::after{content:"SPINOFF TV";position:absolute;bottom:7px;left:0;right:0;text-align:center;font-family:var(--f-display);font-size:11px;letter-spacing:.42em;color:rgba(40,34,20,.45);text-shadow:0 1px 0 rgba(255,255,255,.55)}
+body:not(.domkeys) .keys{left:0;transform:none;bottom:0;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);opacity:0}
+body:not(.domkeys) .keys:focus-within{opacity:1;width:min(414px,calc(100vw - 2*var(--gut)));height:auto;padding:30px 22px 23px;clip:auto;left:50%;transform:translateX(-50%);bottom:calc(var(--gut) + 40px)}
+.keys li{display:flex;flex:1 1 86px;min-width:86px}
+.key{--c:#EDEBE6;appearance:none;cursor:pointer;position:relative;flex:1;min-height:52px;padding:5px 13px;border:0;border-radius:18px/22px;font-family:var(--f-display);font-size:18px;letter-spacing:.1em;text-transform:uppercase;color:#17130f;
+  background:var(--c);background:radial-gradient(130% 170% at 28% 0%,color-mix(in srgb,var(--c) 40%,#fff) 0%,var(--c) 44%,color-mix(in srgb,var(--c) 62%,#000) 100%);
+  text-shadow:0 1px 0 rgba(255,255,255,.6),0 -1px 0 rgba(0,0,0,.28);
+  box-shadow:0 0 0 3px #2a271f,0 0 0 4px rgba(255,255,255,.22),0 6px 0 3px #181610,0 13px 12px rgba(0,0,0,.45),inset 0 3px 2px rgba(255,255,255,.65),inset 0 -8px 9px rgba(0,0,0,.3);
+  transition:transform .08s,box-shadow .08s,filter .15s}
+.key::before{content:"";position:absolute;left:11%;right:11%;top:5px;height:36%;border-radius:999px;background:linear-gradient(rgba(255,255,255,.6),rgba(255,255,255,0));pointer-events:none}
+.key:hover{filter:brightness(1.08)}
+.key:active,.key.pressed{transform:translateY(6px);filter:brightness(.94);box-shadow:0 0 0 3px #2a271f,0 0 0 4px rgba(255,255,255,.14),0 0 0 3px #181610,0 3px 4px rgba(0,0,0,.5),inset 0 3px 8px rgba(0,0,0,.4),inset 0 -3px 5px rgba(0,0,0,.2)}
+.key:focus-visible{outline-offset:8px}
+.key[data-go=pitch]{--c:var(--magenta)}.key[data-go=seats]{--c:var(--cyan)}.key[data-go=how]{--c:var(--amber)}.key[data-go=guide]{--c:var(--bone)}.key[data-go=x]{--c:var(--violet)}
+
+/* channel static transition */
+#tune{position:fixed;inset:0;z-index:80;pointer-events:none;opacity:0}
+#tune.on{opacity:1}
+#tune canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+#tune .osdc{position:absolute;left:var(--gut);top:calc(var(--gut) + 6px);font-family:var(--f-osd);font-size:34px;color:var(--green);text-shadow:0 0 8px rgba(57,255,136,.7)}
+body.nofx #tune canvas{display:none}
+body.nofx #tune{background:var(--void);transition:opacity .15s}
+
+/* ---------- chrome (VCR OSD header) ---------- */
+.chrome{position:fixed;left:0;right:0;top:0;z-index:30;display:none;background:rgba(7,8,12,.92);backdrop-filter:blur(8px)}
+.chrome.on{display:block}
+.chrome__r{display:flex;align-items:center;gap:14px;padding:6px var(--gut);min-height:58px}
+.ch{font-family:var(--f-osd);font-size:26px;color:var(--green);text-shadow:0 0 6px rgba(57,255,136,.5);white-space:nowrap}
+.ch::before{content:"● ";color:var(--bad);animation:rec 1.4s steps(2) infinite}
+@keyframes rec{50%{opacity:.15}}
+.nav{display:flex;gap:4px;margin:0 auto;flex-wrap:wrap;justify-content:center}
+.nav a{text-decoration:none;font-family:var(--f-display);font-size:16px;letter-spacing:.09em;text-transform:uppercase;padding:9px 12px;min-height:44px;display:inline-flex;align-items:center;border-radius:12px;color:var(--dim);transition:color .15s}
+.nav a:hover,.nav a.on{color:var(--bone)}
+.nav a.on{box-shadow:inset 0 -3px 0 var(--amber)}
+.wallet{font-family:var(--f-osd);font-size:21px;line-height:1;background:var(--panel);color:var(--bone);border:2px solid var(--line);border-radius:12px;padding:8px 12px;min-height:44px;cursor:pointer;white-space:nowrap}
+.wallet:hover{border-color:var(--bone)}
+.wallet small{color:var(--dim);font-size:16px;margin-right:6px}
+.wallet.on{color:var(--green)}
+
+/* ---------- pages ---------- */
+.page{position:fixed;inset:0;z-index:20;overflow-y:auto;overflow-x:hidden;display:none;background:radial-gradient(1200px 600px at 80% -10%,rgba(255,43,214,.07),transparent 60%),radial-gradient(900px 500px at 0% 10%,rgba(25,240,255,.06),transparent 60%),var(--void);padding-top:61px;-webkit-overflow-scrolling:touch}
+.page.on{display:block}
+.main{max-width:980px;margin:0 auto;padding:36px var(--gut) 0}
+.page.on .main{animation:tune .4s steps(14,end) both}
+@keyframes tune{0%{clip-path:inset(0 0 100% 0);filter:drop-shadow(-4px 0 var(--cyan)) drop-shadow(4px 0 var(--magenta))}100%{clip-path:inset(0 0 0 0);filter:none}}
+body.nofx .page.on .main{animation:xfade .15s linear both}
+@keyframes xfade{from{opacity:0}to{opacity:1}}
+.label{display:inline-block;font-family:var(--f-osd);font-size:24px;color:var(--green);margin-bottom:2px}
+.h{font-family:var(--f-display);font-weight:400;text-transform:uppercase;font-size:clamp(40px,8vw,84px);line-height:.96;letter-spacing:.01em;margin:4px 0 14px}
+.h span{display:block}
+.h.burst .acc{animation:burst .28s steps(5,end)}
+@keyframes burst{0%{transform:translateX(0);text-shadow:-3px 0 var(--cyan),3px 0 var(--magenta)}25%{transform:translateX(-7px);text-shadow:-12px 0 var(--cyan),9px 0 var(--magenta)}50%{transform:translateX(5px) skewX(-6deg);text-shadow:-9px 0 var(--cyan),12px 0 var(--magenta)}75%{transform:translateX(-2px)}100%{transform:none;text-shadow:-3px 0 var(--cyan),3px 0 var(--magenta)}}
+body.nofx .h.burst .acc{animation:none}
+.lede{color:var(--dim);max-width:62ch;margin:0 0 22px;font-size:17px}
+.flow{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0 0 18px;padding:0}
+.flow li{font-family:var(--f-osd);font-size:21px;color:var(--dim);border:2px solid var(--line);border-radius:999px;padding:3px 14px 3px 8px;display:inline-flex;align-items:center;gap:8px}
+.flow li i{font-style:normal;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--line);color:var(--bone);font-size:18px}
+.flow li.on{color:var(--bone);border-color:var(--amber)}.flow li.on i{background:var(--amber);color:var(--void)}
+.flow li.done{color:var(--bone)}.flow li.done i{background:var(--green);color:var(--void)}
+
+/* bezel cards */
+.bz{background:var(--panel);border:3px solid var(--bone);border-radius:var(--glass);padding:20px;box-shadow:inset 0 0 0 1px var(--line),inset 0 0 28px rgba(25,240,255,.04);position:relative}
+.bz + .bz,.bz + .step{margin-top:18px}
+.bz h3{font-family:var(--f-display);font-weight:400;font-size:28px;letter-spacing:.03em;text-transform:uppercase;margin:0 0 4px}
+.bz.locked{opacity:.55}
+.bz p{margin:0 0 12px}.bz p.dim,.dim{color:var(--dim)}
+.badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-osd);font-size:19px;line-height:1;padding:5px 10px;border-radius:999px;border:2px solid var(--line);color:var(--dim);white-space:nowrap}
+.badge.pilot,.badge.onair{color:var(--bone);border-color:var(--bone)}
+.badge.official{color:var(--void);background:var(--amber);border-color:var(--amber)}
+.badge.shr{color:var(--cyan);border-color:var(--cyan)}
+
+/* form */
+.field{display:block;margin:0 0 12px}
+.field__l{display:flex;justify-content:space-between;gap:12px;font-family:var(--f-osd);font-size:21px;color:var(--dim);margin-bottom:4px}
+.input{width:100%;min-height:50px;background:var(--void);color:var(--bone);border:3px solid var(--line);border-radius:14px;padding:10px 14px;font-family:var(--f-mono);font-size:15px;transition:border-color .15s}
+.input:hover{border-color:var(--dim)}.input:focus{border-color:var(--amber)}
+textarea.input{resize:vertical;min-height:84px;font-family:var(--f-body);font-size:16px;line-height:1.4}
+.title-in{font-family:var(--f-display);font-size:26px;text-transform:uppercase;letter-spacing:.03em;padding:8px 14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.row .field{flex:1 1 220px;margin:0}
+.btn{appearance:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:8px 22px;font-family:var(--f-display);font-size:19px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:var(--bone);background:var(--panel);border:3px solid var(--bone);border-radius:16px;box-shadow:0 5px 0 rgba(237,235,230,.3),0 9px 10px rgba(0,0,0,.35),inset 0 2px 0 rgba(255,255,255,.16),inset 0 -5px 7px rgba(0,0,0,.4);transition:transform .08s,box-shadow .08s,background .15s;position:relative;top:0}
+.btn:hover{background:#171b27}
+.btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 rgba(237,235,230,.3)}
+.btn--p{color:var(--void);background:linear-gradient(#ffcf55,#ffb000 58%,#e29200);border-color:var(--bone);box-shadow:0 5px 0 #9a6200,0 9px 10px rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.6),inset 0 -5px 7px rgba(150,80,0,.45);text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.btn--p:active:not(:disabled){box-shadow:0 1px 0 #9a6200,inset 0 3px 7px rgba(130,70,0,.55)}
+.btn--p:hover{background:linear-gradient(#ffd970,#ffbb1f 58%,#eb9b05)}
+.btn--s{min-height:44px;font-size:16px;padding:6px 14px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.wait{background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.22) 0 10px,transparent 10px 20px);background-size:40px 40px;animation:roll .5s linear infinite}
+@keyframes roll{to{background-position:40px 0}}
+body.nofx .btn.wait{animation:none}
+.msg{min-height:1.4em;margin:10px 0 0;font-size:15px;color:var(--dim)}.msg.err{color:var(--bad)}.msg.ok{color:var(--green)}
+.go{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.trust{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0}
+.trust div{font-family:var(--f-osd);font-size:20px;border:2px solid var(--line);border-radius:12px;padding:4px 12px;color:var(--bone)}
+.trust i{font-style:normal;color:var(--green);margin-right:6px}
+
+/* stage (pitch screen) */
+.stage{position:relative;border:3px solid var(--bone);border-radius:var(--glass);background:#000;overflow:hidden;aspect-ratio:16/7;min-height:170px;margin:0 0 18px;box-shadow:inset 0 0 0 1px var(--line)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated}
+.stage__cap{position:absolute;left:0;right:0;bottom:0;padding:10px 14px;z-index:3;display:flex;justify-content:center;pointer-events:none}
+.cc{background:#000;color:#fff;font-family:var(--f-osd);font-size:24px;line-height:1.15;padding:3px 12px;border-radius:4px;max-width:92%;text-align:center}
+.stage__osd{position:absolute;left:14px;top:8px;font-family:var(--f-osd);font-size:26px;color:var(--green);text-shadow:0 0 6px rgba(57,255,136,.6);z-index:3}
+.stage .stamp{position:absolute;right:14px;top:12px;z-index:3}
+.stage::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);pointer-events:none;z-index:2}
+.tv2{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 18px}
+.tv2 .stage{margin:0;aspect-ratio:4/3;min-height:0}
+.tv2 .stage.child{opacity:.9}
+@media(max-width:620px){.tv2{grid-template-columns:1fr}}
+.stamp{font-family:var(--f-display);font-size:20px;letter-spacing:.12em;color:var(--amber);border:3px solid var(--amber);border-radius:6px;padding:2px 10px;transform:rotate(-5deg);display:inline-block;text-transform:uppercase}
+.stamp.sm{font-size:15px;border-width:2px;padding:1px 7px}
+
+/* parent card */
+.coin{display:grid;grid-template-columns:auto 1fr;gap:6px 16px}
+.coin__img{width:60px;height:60px;border-radius:16px;border:3px solid var(--bone);background:var(--void) center/cover;display:grid;place-items:center;font-family:var(--f-display);font-size:28px}
+.coin__name{font-family:var(--f-display);font-size:28px;text-transform:uppercase;line-height:1.05;overflow-wrap:anywhere}
+.coin__tick{font-family:var(--f-mono);font-size:13px;color:var(--dim)}
+.kvs{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}
+.kv{border:2px solid var(--line);border-radius:12px;padding:8px 12px}
+.kv span{display:block;font-family:var(--f-osd);font-size:19px;color:var(--dim);line-height:1}
+.kv b{font-family:var(--f-mono);font-weight:600;font-size:16px}
+.kv b.up{color:var(--green)}.kv b.dn{color:var(--bad)}
+.tag{font-family:var(--f-osd);font-size:19px;color:var(--magenta);border:2px solid var(--magenta);border-radius:8px;padding:0 8px;grid-column:1/-1;justify-self:start}
+
+/* pre-flight */
+.pre{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:6px}
+.pre li{display:flex;align-items:center;gap:10px;font-size:15px;border:2px solid var(--line);border-radius:12px;padding:8px 12px}
+.pre li i{font-style:normal;font-family:var(--f-osd);font-size:22px;width:22px;text-align:center;color:var(--dim)}
+.pre li.ok i{color:var(--green)}.pre li.no i{color:var(--bad)}
+.pre li b{margin-left:auto;font-family:var(--f-mono);font-weight:600;font-size:14px}
+.pass{margin:12px 0 0;color:var(--green);font-family:var(--f-osd);font-size:22px}
+
+/* signing box */
+.sign{font-family:var(--f-mono);font-size:13px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--void);border:2px dashed var(--line);border-radius:14px;padding:14px;color:var(--bone);margin:6px 0 14px}
+.fp{font-family:var(--f-mono);color:var(--cyan)}
+.ai-badge{font-family:var(--f-osd);font-size:19px;color:var(--dim);border:2px solid var(--line);border-radius:8px;padding:0 8px;margin-left:8px;vertical-align:middle}
+
+/* episode card print-out */
+.print{overflow:hidden;max-height:0;transition:max-height 1s var(--settle)}
+.print.on{max-height:900px}
+.print canvas{width:100%;height:auto;display:block;border:3px solid var(--bone);border-radius:14px;margin-top:14px;background:#000}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+/* rundown */
+.run{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px}
+.run li{font-family:var(--f-osd);font-size:21px;color:var(--dim);border:2px solid var(--line);border-radius:10px;padding:2px 10px}
+.run li.ok{color:var(--bone);border-color:var(--green)}
+.run li::before{content:"☐ ";color:var(--dim)}
+.run li.ok::before{content:"✓ ";color:var(--green)}
+
+/* lists + seats + guide */
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+.stat{border:3px solid var(--bone);border-radius:16px;padding:8px 16px;background:var(--panel);min-width:130px}
+.stat b{font-family:var(--f-display);font-size:34px;font-weight:400;display:block;line-height:1}
+.stat span{font-family:var(--f-osd);font-size:19px;color:var(--dim)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.tab{font-family:var(--f-display);font-size:16px;letter-spacing:.08em;text-transform:uppercase;min-height:44px;padding:6px 16px;background:transparent;border:2px solid var(--line);border-radius:12px;cursor:pointer;color:var(--dim)}
+.tab.on{color:var(--void);background:var(--bone);border-color:var(--bone)}
+.tablewrap{overflow-x:auto;border:3px solid var(--bone);border-radius:var(--glass);background:var(--panel)}
+table.guide{width:100%;border-collapse:collapse;min-width:640px}
+.guide th{font-family:var(--f-osd);font-weight:400;font-size:20px;color:var(--dim);text-align:left;padding:10px 14px;border-bottom:2px solid var(--line)}
+.guide td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+.guide tr:last-child td{border-bottom:0}
+.guide tbody tr{cursor:pointer}
+.guide tbody tr:hover,.guide tbody tr:focus-visible{background:#151a26}
+.guide tbody tr.glitch{animation:rowg .22s steps(4,end)}
+@keyframes rowg{25%{transform:translateX(-4px);box-shadow:-4px 0 var(--cyan),4px 0 var(--magenta)}60%{transform:translateX(3px)}100%{transform:none}}
+body.nofx .guide tbody tr.glitch{animation:none}
+.chn{font-family:var(--f-osd);font-size:24px;color:var(--green)}
+.show b{display:block;font-family:var(--f-display);font-weight:400;font-size:20px;text-transform:uppercase;letter-spacing:.03em}
+.show span{color:var(--dim);font-size:13px;font-family:var(--f-mono)}
+.mono{font-family:var(--f-mono);font-size:14px}
+.pitchrow{display:flex;flex-direction:column;gap:12px}
+.pitch{background:var(--panel);border:3px solid var(--bone);border-radius:var(--glass);padding:18px;box-shadow:inset 0 0 0 1px var(--line)}
+.pitch__h{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start}
+.pitch__t{font-family:var(--f-display);font-size:26px;text-transform:uppercase;letter-spacing:.02em;line-height:1.05}
+.pitch__m{color:var(--dim);font-size:14px;margin-top:2px}
+.seatmap{display:flex;flex-wrap:wrap;gap:5px;margin:14px 0 6px;min-height:22px}
+.seat{--s:var(--line);width:20px;height:22px;border-radius:7px 7px 3px 3px;background:var(--s);position:relative;border:0;padding:0;cursor:default;box-shadow:inset 0 -5px 0 rgba(0,0,0,.35)}
+.seat.mine{--s:var(--amber)}.seat.held{--s:#4d566f}.seat.gone{--s:#232838;opacity:.55}
+.seat:hover,.seat:focus-visible{outline:2px solid var(--bone);outline-offset:2px}
+.seatcap{font-family:var(--f-osd);font-size:20px;color:var(--dim)}
+.fine{font-size:13px;color:var(--dim);margin:10px 0 0}
+.empty{border:3px dashed var(--line);border-radius:var(--glass);padding:34px 20px;text-align:center}
+.empty b{display:block;font-family:var(--f-display);font-weight:400;font-size:32px;text-transform:uppercase;margin-bottom:4px}
+.empty p{margin:0 0 16px;color:var(--dim)}
+.drop{border:3px dashed var(--line);border-radius:var(--glass);padding:22px;text-align:center;cursor:pointer;color:var(--dim)}
+.drop.over,.drop:hover{border-color:var(--amber);color:var(--bone)}
+.vres{margin:12px 0 0;font-family:var(--f-osd);font-size:22px}
+.vres.ok{color:var(--green)}.vres.no{color:var(--bad)}
+.banner{background:var(--cyan);color:var(--void);font-family:var(--f-osd);font-size:22px;border-radius:14px;padding:8px 14px;margin:0 0 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.back{display:inline-block;margin:0 0 14px;font-family:var(--f-osd);font-size:22px;color:var(--dim);text-decoration:none;min-height:44px;line-height:44px}.back:hover{color:var(--bone)}
+.ladder{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
+.ladder .badge.cur{background:var(--bone);color:var(--void);border-color:var(--bone)}
+.ladder .badge.cur.official{background:var(--amber);border-color:var(--amber)}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0}
+.dl dt{font-family:var(--f-osd);font-size:20px;color:var(--dim)}.dl dd{margin:0;overflow-wrap:anywhere}
+
+/* original art + filters */
+.art{position:relative;width:min(340px,100%);aspect-ratio:1;border:3px solid var(--bone);border-radius:22px;overflow:hidden;background:#000;isolation:isolate}
+.art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.art .l2,.art .l3{display:none}
+.art--dark .l1{filter:brightness(.52) contrast(1.35) saturate(.55)}
+.art--dark::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,.8) 100%);pointer-events:none}
+.art--glitchy .l1{opacity:.7;filter:contrast(1.15)}
+.art--glitchy .l2,.art--glitchy .l3{display:block;mix-blend-mode:screen}
+.art--glitchy .l2{filter:url(#fxCyan);transform:translateX(-7px)}
+.art--glitchy .l3{filter:url(#fxMag);transform:translateX(7px)}
+.art--glitchy::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.28) 0 1px,transparent 1px 3px);pointer-events:none}
+.art.burst .l2{animation:artl .28s steps(5,end)}.art.burst .l3{animation:artr .28s steps(5,end)}
+@keyframes artl{30%{transform:translate(-16px,3px)}60%{transform:translate(-3px,-2px)}}
+@keyframes artr{30%{transform:translate(16px,-3px)}60%{transform:translate(3px,2px)}}
+/* how */
+.how-hero{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:center}
+@media(max-width:760px){.how-hero{grid-template-columns:1fr}}
+.how-anim svg{width:100%;height:auto;display:block}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:22px 0}
+.step{background:var(--panel);border:3px solid var(--bone);border-radius:var(--glass);padding:16px;box-shadow:inset 0 0 0 1px var(--line)}
+.step__n{font-family:var(--f-osd);font-size:24px;color:var(--green)}
+.step__t{font-family:var(--f-display);font-size:26px;text-transform:uppercase;letter-spacing:.02em;margin:2px 0 6px}
+.step__d{margin:0;color:var(--dim);font-size:15px}
+.finep{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.finep div{border:2px solid var(--line);border-radius:16px;padding:14px;color:var(--dim);font-size:15px}
+.finep b{display:block;color:var(--bone);font-family:var(--f-display);font-weight:400;font-size:20px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
+.risk{margin:22px 0 0;border:3px solid var(--bad);border-radius:var(--glass);padding:16px 18px;color:var(--bone)}
+.risk b{color:var(--bad)}
+.nosig{font-family:var(--f-display);font-size:clamp(60px,14vw,140px);text-transform:uppercase;line-height:.95}
+
+/* footer */
+.foot{margin:46px calc(-1*var(--gut)) 0;padding:0 var(--gut) 40px}
+.foot .bars{margin:0 0 22px}
+.foot nav{display:flex;gap:6px 18px;flex-wrap:wrap}
+.foot nav a{font-family:var(--f-osd);font-size:22px;text-decoration:none;color:var(--dim);min-height:44px;display:inline-flex;align-items:center}.foot nav a:hover{color:var(--bone)}
+.foot .tag2{font-family:var(--f-osd);font-size:22px;color:var(--green);margin:6px 0}
+.foot .ca{font-family:var(--f-mono);font-size:13px;color:var(--dim);overflow-wrap:anywhere;margin:6px 0}
+.foot .risk2{font-size:13px;color:var(--dim);max-width:78ch;margin:10px 0 0}
+
+/* wallet modal */
+.wm{position:fixed;inset:0;z-index:85;background:rgba(0,0,0,.72);display:none;place-items:center;padding:var(--gut)}
+.wm.on{display:grid}
+.wm__c{position:relative;width:min(440px,100%);background:var(--panel);border:3px solid var(--bone);border-radius:var(--glass);padding:22px;box-shadow:inset 0 0 0 1px var(--line)}
+.wm__c h3{font-family:var(--f-display);font-weight:400;text-transform:uppercase;font-size:30px;margin:0 0 6px}
+.wm__c p{color:var(--dim);margin:0 0 14px;font-size:15px}
+.wm__x{position:absolute;right:10px;top:10px;width:44px;height:44px;background:none;border:0;font-size:28px;cursor:pointer;color:var(--dim)}
+.wm__l{display:grid;gap:8px}
+.wm__b{display:flex;align-items:center;gap:12px;min-height:50px;padding:8px 14px;border:2px solid var(--line);border-radius:14px;background:var(--void);cursor:pointer;text-align:left}
+.wm__b:hover{border-color:var(--bone)}
+.wm__b i{width:14px;height:14px;border-radius:50%}
+.wm__b span{flex:1;font-weight:500}
+.wm__b em{font-style:normal;font-family:var(--f-osd);font-size:20px;color:var(--dim)}
+
+/* lower-third toast */
+#toast{position:fixed;left:0;bottom:calc(env(safe-area-inset-bottom) + 28px);z-index:95;transform:translateX(-105%);transition:transform .35s var(--settle);max-width:min(560px,92vw);pointer-events:none}
+#toast.on{transform:translateX(0)}
+#toast div{display:flex;align-items:stretch;background:var(--bone);color:var(--void);border-radius:0 14px 14px 0;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+#toast i{width:14px;background:var(--magenta);flex:none}
+#toast span{padding:12px 18px;font-weight:500;font-size:15px;line-height:1.35}
+body.nofx #toast{transition:opacity .15s;transform:none;opacity:0}body.nofx #toast.on{opacity:1}
+
+/* narrow */
+@media(max-width:640px){
+  .chrome__r{flex-wrap:wrap;gap:4px 10px;padding-top:6px;padding-bottom:6px}
+  .nav{order:3;width:100%;margin:0;justify-content:flex-start}
+  .nav a{padding:8px 9px;font-size:15px}
+  .page{padding-top:108px}
+  .ctl{top:calc(var(--gut) + 4px)}
+  .keys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:29px 18px 23px;width:min(306px,calc(100vw - 2*var(--gut)));bottom:calc(var(--gut) + 26px)}
+  .keys li{min-width:0}
+  .counter{bottom:calc(var(--gut) - 4px)}
+  .hint{display:none}
+  .hero__card p{display:none}
+  .h{font-size:clamp(38px,12vw,60px)}
+  .stage{aspect-ratio:4/3}
+}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+</head>
+<body data-route="room">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="fxCyan" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"/></filter>
+  <filter id="fxMag" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"/></filter>
+</defs></svg>
+<h1 class="sr">Spinoff: every hit gets a spinoff.</h1>
+
+<!-- ROOM -->
+<main class="room" id="room" aria-label="Spinoff living room">
+  <canvas id="stage" aria-hidden="true"></canvas>
+  <div class="fallback">
+    <div class="crt"><div class="crt__s"><div class="crt__t">STAND BY<small>PICK A CHANNEL</small></div></div></div>
+    <p id="fbLine"></p>
+  </div>
+  <div class="hero">
+    <a class="brand" href="#/" aria-label="Spinoff"><img src="./assets/logo.svg" alt="" width="34" height="34"><span>Spinoff</span></a>
+    <div class="hero__card" id="heroCard">
+      <h2 class="ttl"><span id="heroL1"></span><span class="acc" id="heroL2"></span></h2>
+      <p id="heroSub"></p>
+    </div>
+  </div>
+  <div class="ctl">
+    <button class="chip" id="soundBtn" aria-pressed="false"></button>
+    <button class="chip" id="fxBtn" aria-pressed="true"></button>
+  </div>
+  <div class="counter" id="counter" aria-live="polite"></div>
+  <p class="hint" id="hint"></p>
+  <div class="caption" id="caption" aria-hidden="true"></div>
+  <ul class="keys" id="keys" aria-label="Channels"></ul>
+  <div class="tip" id="tip" aria-hidden="true"></div>
+</main>
+
+<div id="tune" aria-hidden="true"><canvas id="tuneCv" width="320" height="180"></canvas><div class="osdc" id="tuneOsd"></div></div>
+
+<!-- CHROME -->
+<header class="chrome" id="chrome">
+  <div class="chrome__r">
+    <span class="ch" id="chNum">CH 01</span>
+    <a class="brand" href="#/" aria-label="Back to the room"><img src="./assets/logo.svg" alt="" width="34" height="34"><span class="sr">Spinoff</span></a>
+    <nav class="nav" id="nav" aria-label="Main"></nav>
+    <button class="wallet" id="wallet"></button>
+  </div>
+  <i class="bars" aria-hidden="true"></i>
+</header>
+
+<!-- PITCH -->
+<section class="page" data-page="pitch" id="page-pitch" aria-label="Pitch">
+  <div class="main">
+    <span class="label">01</span>
+    <h2 class="h"><span>One hit in.</span><span class="acc">One spinoff out.</span></h2>
+    <ol class="flow" id="flow"></ol>
+    <p class="lede" id="pitchLede"></p>
+
+    <div class="tv2" id="tv2">
+      <div class="stage" id="stageP">
+        <canvas id="cvP" width="320" height="240"></canvas>
+        <div class="stage__osd" id="osdP"></div>
+        <div class="stage__cap"><div class="cc" id="ccP" hidden></div></div>
+      </div>
+      <div class="stage child" id="stageC">
+        <canvas id="cvC" width="320" height="240"></canvas>
+        <div class="stage__osd" id="osdC"></div>
+        <div class="stage__cap"><div class="cc" id="ccC" hidden></div></div>
+      </div>
+      <canvas id="cvG" width="640" height="240" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;opacity:0"></canvas>
+    </div>
+
+    <section class="bz" id="s1" aria-labelledby="s1h">
+      <h3 id="s1h"></h3>
+      <form id="tuneForm" autocomplete="off">
+        <div class="row">
+          <label class="field"><span class="field__l"><span id="parentLbl"></span></span>
+            <input class="input" id="caP" spellcheck="false" autocapitalize="off"></label>
+          <button class="btn btn--p" id="tuneBtn" type="submit"></button>
+        </div>
+      </form>
+      <p class="msg" id="msgP" role="status"></p>
+      <div id="parentBox"></div>
+    </section>
+
+    <section class="bz locked" id="s2" aria-labelledby="s2h">
+      <h3 id="s2h"></h3>
+      <p class="dim" id="s2lock"></p>
+      <div id="s2body" hidden>
+        <p class="dim"><span id="srTag"></span><span class="ai-badge" id="srBadge"></span></p>
+        <label class="field"><span class="field__l"><span id="lblName"></span></span><input class="input title-in" id="inName" maxlength="48" spellcheck="false"></label>
+        <label class="field"><span class="field__l"><span id="lblTick"></span></span><input class="input title-in" id="inTick" maxlength="10" spellcheck="false" autocapitalize="characters"></label>
+        <p class="msg err" id="errTick" hidden></p>
+        <label class="field"><span class="field__l"><span id="lblPrem"></span><span id="premCnt"></span></span><textarea class="input" id="inPrem" rows="3"></textarea></label>
+        <p class="msg err" id="errPrem" hidden></p>
+        <button class="btn" id="rerollBtn" type="button"></button>
+      </div>
+    </section>
+
+    <section class="bz locked" id="s3" aria-labelledby="s3h">
+      <h3 id="s3h"></h3>
+      <div id="s3body" hidden>
+        <p class="dim" id="signBoxT"></p>
+        <pre class="sign" id="signBox"></pre>
+        <div class="go"><button class="btn btn--p" id="spinBtn" type="button"></button></div>
+        <p class="fine" id="signNote"></p>
+        <p class="msg" id="msgS" role="status"></p>
+        <p class="fp" id="fpLine"></p>
+      </div>
+      <p class="dim" id="s3lock"></p>
+      <div class="print" id="print">
+        <canvas id="cardCv" width="1200" height="630" aria-label="Episode card"></canvas>
+        <div class="acts" id="cardActs"></div>
+      </div>
+    </section>
+
+    <section class="bz locked" id="s4" aria-labelledby="s4h">
+      <h3 id="s4h"></h3>
+      <p class="dim" id="s4lede"></p>
+      <div class="go" id="launchRow"></div>
+      <form id="attachForm" autocomplete="off" hidden>
+        <div class="row">
+          <label class="field"><span class="field__l"><span id="childLbl"></span></span><input class="input" id="caC" spellcheck="false" autocapitalize="off"></label>
+          <button class="btn btn--p" id="attachBtn" type="submit"></button>
+        </div>
+      </form>
+      <p class="msg" id="msgA" role="status"></p>
+      <h3 style="margin-top:16px;font-size:22px" id="runT"></h3>
+      <ul class="run" id="run"></ul>
+    </section>
+
+    <div class="trust" id="trustP"></div>
+  </div>
+</section>
+
+<!-- SEATS -->
+<section class="page" data-page="seats" id="page-seats" aria-label="Seats">
+  <div class="main">
+    <span class="label">02</span>
+    <h2 class="h"><span>Parent holders,</span><span class="acc">take your seats.</span></h2>
+    <p class="lede" id="seatsLede"></p>
+    <div class="trust" id="seatsRules"></div>
+    <p class="msg" id="msgSeat" role="status"></p>
+    <div class="pitchrow" id="seatList"></div>
+    <p class="fine" id="seatsFine"></p>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="page" data-page="how" id="page-how" aria-label="How it works">
+  <div class="main">
+    <div class="how-hero">
+      <div>
+        <span class="label">03</span>
+        <h2 class="h"><span>A second show,</span><span class="acc">same universe.</span></h2>
+        <p class="lede" id="howLede"></p>
+      </div>
+      <div class="how-anim" id="howAnim" role="img"></div>
+    </div>
+    <div class="steps" id="howSteps"></div>
+    <div class="finep" id="howFine"></div>
+    <p class="fine" id="howExplain"></p>
+    <div class="risk" id="howRisk"></div>
+  </div>
+</section>
+
+<!-- GUIDE -->
+<section class="page" data-page="guide" id="page-guide" aria-label="Guide">
+  <div class="main">
+    <span class="label">04</span>
+    <h2 class="h"><span>What's on,</span><span class="acc">in this browser.</span></h2>
+    <p class="lede" id="guideLede"></p>
+    <div class="stats" id="guideStats"></div>
+    <div class="tabs" id="guideTabs" role="tablist"></div>
+    <div id="guideBody"></div>
+    <div class="go" style="margin-top:14px" id="guideBtns"></div>
+    <section class="bz" id="verifyBox" style="margin-top:26px" aria-labelledby="verH">
+      <h3 id="verH"></h3>
+      <p class="dim" id="verLede"></p>
+      <label class="drop" id="drop" tabindex="0"><span id="dropT"></span><input type="file" id="verFile" accept="application/json,.json" hidden></label>
+      <p class="vres" id="verRes" role="status"></p>
+      <p class="fine" id="verFoot"></p>
+    </section>
+  </div>
+</section>
+
+<!-- PITCH DETAIL -->
+<section class="page" data-page="p" id="page-p" aria-label="Pitch detail">
+  <div class="main"><a class="back" href="#/guide" id="backLink"></a><div id="pBody"></div></div>
+</section>
+
+<!-- 404 -->
+<section class="page" data-page="404" id="page-404" aria-label="Not found">
+  <div class="main" style="text-align:center;padding-top:12vh">
+    <div class="nosig" id="e404Osd" style="color:var(--green);font-family:var(--f-osd);text-shadow:0 0 12px rgba(57,255,136,.6)"></div>
+    <p class="lede" style="margin:10px auto 24px" id="e404Line"></p>
+    <a class="btn btn--p" href="#/" id="e404Btn"></a>
+  </div>
+</section>
+
+<div id="boot" aria-live="polite"><div class="ln"></div><div class="bt"><div class="l1" id="bootL1"></div><div class="l2" id="bootL2"></div><i class="bars"></i></div></div>
+
+<div class="wm" id="wm" role="dialog" aria-modal="true" aria-labelledby="wmT"><div class="wm__c">
+  <button class="wm__x" id="wmClose" aria-label="Close">&times;</button>
+  <h3 id="wmT"></h3><p id="wmP"></p>
+  <div class="wm__l" id="wmList"></div></div></div>
+<div id="toast" role="status" aria-live="polite"><div><i></i><span id="toastT"></span></div></div>
+<div class="vig" aria-hidden="true"></div><i class="scan" aria-hidden="true"></i>
+<canvas id="noise" width="256" height="144" aria-hidden="true"></canvas>
+
+<script>
+window.SPINOFF_CONFIG = {
+  rpc: "https://api.mainnet-beta.solana.com",   // Solana RPC for balances (swap in your own for speed)
+  api: "",                      // e.g. "https://api.example.com" -> POST /pitches, /claims, /attach
+  x: "", telegram: "", repo: "",            // empty = the link is not rendered
+  launchpadUrl: "", launchpadLabel: "Launch it",   // empty URL = no launch button
+  tokenCA: "",                  // $SPINOFF contract; empty = no contract line shown
+  minParentAgeDays: 30,
+  minParentLiquidityUsd: 10000,
+  officialMcapUsd: 100000,
+  pitchPremiseMax: 140,
+  fx: true, sound: false
+};
+</script>
+<script type="module">
+import * as L from './assets/lib.js';
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const CFG = Object.assign({ rpc: 'https://api.mainnet-beta.solana.com', api: '', x: '', telegram: '', repo: '', launchpadUrl: '', launchpadLabel: 'Launch it', tokenCA: '', fx: true, sound: false }, L.DEFAULTS, window.SPINOFF_CONFIG || {});
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const short = L.short;
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const raf = () => new Promise(r => requestAnimationFrame(r));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const httpsOnly = u => (typeof u === 'string' && u.startsWith('https://')) ? u : '';
+const baseUrl = () => location.href.split('#')[0];
+
+/* ================= COPY (all text lives in COPY_DECK.md; config-driven numbers are rendered here) ================= */
+const U = L.usdShort;
+const cfgN = {
+  age: () => CFG.minParentAgeDays, mcap: () => U(CFG.officialMcapUsd),
+  liq: () => U(CFG.minParentLiquidityUsd), prem: () => CFG.pitchPremiseMax
+};
+const C = {
+  boot: { l1: 'WARMING UP', l2: 'degaussing…', osd: 'CH 01 · STAND BY', noGl: "Your screen can't do the tube. The channels still work." },
+  room: {
+    l1: 'Every hit gets a', l2: 'spinoff', sub: "Pick a coin that's been around. Pitch its spinoff. Holders of the parent can claim the first seats.",
+    saver: 'No signal? Pick a channel.', hint: 'Press a button · drag the screen · mind the antenna', ant: 'Mind the antenna.',
+    counter: n => `Pitched in this browser: ${n}`, soundOn: 'Sound on', soundOff: 'Sound off', fxOn: 'FX on', fxOff: 'FX off',
+    fxLblOff: 'Turn visual effects off', fxLblOn: 'Turn visual effects on',
+    tipThump: 'Thump it', tipChild: 'Pitch a spinoff', tipAnt: 'Tune it'
+  },
+  keys: [
+    { go: 'pitch', label: 'PITCH', tip: 'Pitch a spinoff', osd: 'CH 01 · PITCH', aria: 'Pitch a spinoff', col: '#FF2BD6' },
+    { go: 'seats', label: 'SEATS', tip: 'Claim a seat', osd: 'CH 02 · SEATS', aria: 'Claim a seat', col: '#19F0FF' },
+    { go: 'how', label: 'HOW', tip: 'How it works', osd: 'CH 03 · HOW', aria: 'How it works', col: '#FFB000' },
+    { go: 'guide', label: 'GUIDE', tip: 'The listings', osd: 'CH 04 · GUIDE', aria: 'The listings', col: '#EDEBE6' },
+    { go: 'x', label: 'X', tip: 'Follow on X', osd: 'EXT · X', aria: 'Follow on X', col: '#A98BFF' }
+  ],
+  chrome: { nav: [['pitch', 'Pitch'], ['seats', 'Seats'], ['how', 'How it works'], ['guide', 'Guide']], connect: 'Connect', input: 'INPUT: WALLET',
+    wmT: 'Connect a wallet', wmP: 'Pick a Solana wallet. Spinoff reads your address and token balances and asks you to sign messages. It never moves funds.',
+    detected: 'Detected', install: 'Install', back: '← The guide' },
+  pitch: {
+    lede: () => `Paste a coin that's been around. Spinoff reads its live market data and checks it can be a parent. Then the Showrunner drafts the pilot and you sign the pitch.`,
+    chips: ['Tune the parent', 'Write the pilot', 'Sign the pitch', 'Attach the child'],
+    lbl: 'Parent coin', ph: 'Contract address', tune: 'Tune in', looking: 'Looking for a signal…', lockPilot: 'The pilot unlocks once a parent is tuned in.',
+    tagParent: 'Parent', mcap: 'Market cap', liq: 'Liquidity', vol: '24h volume', age: 'Age', chg: '24h', days: n => `${n} days`,
+    pre: 'Pre-flight',
+    preMarket: 'On Solana with a live market', preAge: () => `At least ${cfgN.age()} days old`, preLiq: () => `Liquidity of at least ${cfgN.liq()}`,
+    pass: 'Pre-flight passed. This coin can be a parent.',
+    noSig: 'NO SIGNAL',
+    bad: "That doesn't look like a Solana contract address.",
+    notFound: a => `We couldn't find a Solana market for ${short(a)}.`,
+    young: a => `Too new. This coin is ${a} days old. Parents have to be at least ${cfgN.age()} days old.`,
+    thin: l => `Not enough liquidity. This coin has ${U(l)}. Parents need at least ${cfgN.liq()}.`,
+    nomc: "Market cap is missing for this coin, so Spinoff can't read it.",
+    down: "Market data didn't load. Try again.",
+    sr: 'SHOWRUNNER', srBadge: 'Scripted · not an AI',
+    srIntro: (n, a) => `[SHOWRUNNER] ${n} has been on air ${a} days. Let's see what it can carry on its own.`,
+    reroll: 'Another angle', srReroll: '[SHOWRUNNER] Let me try another angle.',
+    lName: 'Spinoff name', lTick: 'Ticker', lPrem: 'Premise (fiction)',
+    errTick: 'Letters and numbers only, up to 10.', errPrem: () => `Keep it under ${cfgN.prem()} characters.`,
+    s2: 'Write the pilot', s3: 'Sign the pitch', boxT: "What you're signing", spin: 'SPIN IT OFF', wait: 'Awaiting signature…',
+    note: 'Signing moves no funds. The pitch is saved in this browser and can be shared by link.',
+    pilot: 'PILOT', unofficial: 'Unofficial', signed: fp => `Pitch signed. Fingerprint ${fp}.`,
+    needWallet: 'Connect a wallet to sign the pitch.', connectToSign: 'Connect to sign',
+    card: { top: 'SPINOFF', stamp: 'UNOFFICIAL', foot: "Not made or endorsed by the parent coin's team." },
+    cardBtns: { dl: 'Download card', x: 'Share on X', copy: 'Copy link', proof: 'Download proof file' },
+    shareX: { pilot: (c, ct, p, pt) => `Pitched: ${c} $${ct}, a spinoff of ${p} $${pt}. Unofficial.`, onair: (c, ct, p) => `${c} $${ct} is on air. Spinoff of ${p}. Unofficial.`,
+      official: (c, ct) => `${c} $${ct} reached ${cfgN.mcap()} market cap and is marked Official on Spinoff. Not an endorsement.` },
+    s4: 'Attach the child', s4lede: "Spinoff doesn't create tokens. Launch the child wherever you like, then paste its contract address here.",
+    childLbl: 'Child coin', attach: 'Attach',
+    errSame: "That's the parent's address. The spinoff needs its own.", errWallet: 'Only the wallet that signed this pitch can attach a child.',
+    errChild: a => `We couldn't find a Solana market for ${short(a)} yet.`, onAir: t => `On air. Reading ${t} live.`,
+    run: 'Rundown', runItems: ['Name', 'Ticker', 'Premise', 'Signed', 'Launched elsewhere', 'Child attached'],
+    trust: ['Never moves your funds', 'You only sign messages', 'Every pitch is unofficial until the market says otherwise']
+  },
+  status: {
+    pilot: 'Pilot · Unofficial', onair: 'On air · Unofficial', official: () => `Official on Spinoff · reached ${cfgN.mcap()} market cap`,
+    explain: () => `Unofficial means it wasn't made or approved by the parent coin's team. A spinoff is marked Official on Spinoff when its own market cap, read live, is at or above ${cfgN.mcap()}. Official is not an endorsement and the status can change.`,
+    read: t => `Last read ${t}. Market data can lag or be wrong.`
+  },
+  seats: {
+    lede: "Hold the parent coin? Claim a seat for its spinoff. A claim is a signed line on a list. It doesn't promise anything.",
+    rules: ['Balance read on-chain', 'Signed with your wallet', 'Claims in this browser'],
+    meta: (c, p) => `${c} · spinoff of ${p}`, cap: n => `${n} seats claimed in this browser`, claim: 'Claim seat', recheck: 'Re-check',
+    tip: (a, n, t) => `${short(a)} · claimed with ${n} $${t}`, mine: 'Your seat', vacated: 'Vacated · balance is now zero', more: n => `+${n} more`,
+    notHolder: t => `You don't hold $${t}, so there's no seat for you.`, checking: 'Checking your balance…', ok: (n, t) => `Seat claimed with ${n} $${t}.`,
+    already: 'You already have a seat for this pitch.', rc: n => n ? `Seats re-checked. ${n} vacated.` : 'Seats re-checked. All still held.',
+    fine: "A seat is a claim, not an allocation. Whoever launches the child decides what, if anything, claimants get.",
+    empty: ['No pitches to sit in on yet', 'Seats open when someone pitches a spinoff.', 'Pitch the first one'], connect: 'Connect to claim',
+    signT: 'What you\'re signing', signBtn: 'Sign and claim', cancel: 'Cancel'
+  },
+  how: {
+    lede: "Most coin tools squash coins together. Spinoff goes the other way. The parent coin stays exactly as it is, a child coin is pitched from it, and the parent's holders can claim the first seats.",
+    alt: 'A TV splits into two. The second one switches on.',
+    eps: () => [
+      ['EP 1', 'Pick a hit', `Paste a Solana coin that's at least ${cfgN.age()} days old with real liquidity. Spinoff reads it live and runs the pre-flight.`],
+      ['EP 2', 'Pitch the spinoff', 'The Showrunner drafts a name, ticker and premise. You edit them and sign the pitch with your wallet. Signing moves no funds.'],
+      ['EP 3', 'Claim a seat', 'Parent holders connect, Spinoff reads their balance on-chain, and they sign to claim a seat. A claim is a line on a list.'],
+      ['EP 4', 'Go to air', `Launch the child anywhere you like and paste its address back. The pitch goes On air. If the child's market cap reaches ${cfgN.mcap()} it's marked Official.`]
+    ],
+    fine: [
+      ['Unofficial by default', 'Anyone can pitch a spinoff of any coin that passes the pre-flight, so every pitch says Unofficial. Official on Spinoff only means the market-cap milestone was reached.'],
+      ['Seats are claims', "A claim is signed and shows the balance it was made with, and it can be re-checked. It's not a guarantee of an allocation."],
+      ['Nothing is custodied', 'Spinoff never holds funds, never sends a transaction and never asks for one. It reads public data and asks you to sign messages.']
+    ],
+    risk: '<b>Be honest about the risks.</b> Anyone can pitch a spinoff of any coin, which is why every pitch is labelled Unofficial. Someone can buy a parent coin right before claiming a seat; a seat shows the balance it was claimed with and can be re-checked, but that doesn\'t remove the risk. A spinoff can pull attention away from its parent. Spinoff coins can lose all of their value.'
+  },
+  guide: {
+    lede: 'Every pitch saved here, with its channel and status. Share one by link and anyone can open it.',
+    stats: ['pitches', 'on air', 'official'], inBrowser: 'in this browser', th: ['CH', 'Show', 'Status', 'Parent', 'Child market cap'],
+    tabs: [['all', 'All'], ['pilot', 'Pilots'], ['onair', 'On air'], ['official', 'Official']],
+    refresh: 'Refresh', load: 'Load examples', remove: 'Remove examples',
+    none: '—', verT: 'Verify a proof file', verLede: 'Drop a proof file from a pitch to check its signature in this browser.', drop: 'Drop a proof file here, or choose one',
+    vOk: a => `Signature checks out for wallet ${short(a)}.`, vNo: 'Signature does not match.',
+    vUns: "This browser can't verify signatures. Try a current Chrome, Firefox or Safari.", vBad: "That file isn't a Spinoff proof.",
+    vFoot: 'A signature proves wallet approval, not identity.',
+    emptyAll: ['Nothing on', 'The guide is empty in this browser. Pitch the first spinoff.', 'Start a pitch'], emptyTab: 'Nothing here yet.'
+  },
+  detail: {
+    banner: 'Shared link · not saved in this browser', save: 'Save to this browser', seatsT: 'Seats in this browser', artT: 'Original art', artF: [['original', 'Original'], ['dark', 'Dark'], ['glitchy', 'Glitchy']], artNone: 'No image found for this coin.',
+    f: ['Parent', 'Spinoff', 'Premise (fiction)', 'Proposed by', 'Signed', 'Fingerprint', 'Status'],
+    notFound: ["We can't find that pitch", 'It may only exist in another browser, or the link is incomplete.'],
+    damaged: "That link is damaged, so Spinoff can't open it.", verify: 'Verify signature'
+  },
+  foot: {
+    nav: [['pitch', 'Pitch'], ['seats', 'Seats'], ['how', 'How it works'], ['guide', 'Guide']], room: 'Room', tag: 'Spinoff · every hit gets a spinoff',
+    ca: ca => `$SPINOFF contract: ${ca}`,
+    risk: "Spinoff is a community tool, not financial advice. Meme coins can lose all of their value. Pitches are unofficial and are not made or endorsed by the parent coin's team. Verify the $SPINOFF contract on the official X before you trust any address."
+  },
+  t: {
+    walletOk: 'Wallet connected.', disc: 'Disconnected.', cancelled: 'Connection cancelled.', cantConnect: n => `Couldn't connect ${n}.`, notInstalled: n => `${n} isn't installed. Opening its download page.`,
+    sigCancel: 'Signature cancelled.', noSign: "This wallet can't sign messages.", saved: 'Pitch saved to this browser.', copied: 'Link copied.', cardDl: 'Card downloaded.',
+    proofDl: 'Proof file downloaded.', samplesOn: 'Examples loaded.', samplesOff: 'Examples removed.',
+    onair: n => `${n} is on air.`, official: n => `${n} reached ${cfgN.mcap()} market cap. Marked Official on Spinoff.`, back: n => `${n} is back to On air.`,
+    dup: 'This parent already has a pitch in this browser.'
+  },
+  err: { rpc: 'Solana RPC is busy. Try again in a moment.', bal: "Couldn't verify your balance for this coin. Try again.", market: "Market data didn't load. Try again.", generic: 'Something went wrong. Try again.',
+    fp: "Your browser can't create a fingerprint here. Open the site over https." },
+  e404: { osd: 'NO SIGNAL', line: 'Nothing on this channel.', btn: 'Back to the room' }
+};
+const statusLabel = st => st === 'official' ? C.status.official() : C.status[st];
+
+/* ================= TOAST (lower-third chyron) ================= */
+let toastT;
+function toast(t){ $('#toastT').textContent = t; const el = $('#toast'); el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 3200); }
+
+/* ================= FX + SOUND ================= */
+let FX = store.get('spinoff-fx', null);
+if(FX === null) FX = !!CFG.fx && !reduced;
+function applyFx(){
+  document.body.classList.toggle('nofx', !FX);
+  const b = $('#fxBtn'); b.textContent = FX ? C.room.fxOn : C.room.fxOff; b.setAttribute('aria-pressed', FX);
+  b.setAttribute('aria-label', FX ? C.room.fxLblOff : C.room.fxLblOn);
+  room.fxChanged && room.fxChanged();
+}
+const Sound = (() => {
+  let ctx, on = false, hum = null;
+  const ensure = () => { if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if(ctx.state === 'suspended') ctx.resume().catch(() => {}); };
+  function tone(f, d, v, type, slideTo, delay = 0){
+    if(!on) return; ensure();
+    const t = ctx.currentTime + delay, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + d);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + d + .02);
+  }
+  function noise(d, v, hp = 800){
+    if(!on) return; ensure();
+    const n = Math.floor(ctx.sampleRate*d), buf = ctx.createBuffer(1, n, ctx.sampleRate), a = buf.getChannelData(0);
+    for(let i = 0; i < n; i++) a[i] = (Math.random()*2 - 1)*(1 - i/n);
+    const s = ctx.createBufferSource(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    f.type = 'highpass'; f.frequency.value = hp; g.gain.value = v;
+    s.buffer = buf; s.connect(f); f.connect(g); g.connect(ctx.destination); s.start();
+  }
+  return {
+    get on(){ return on; },
+    set(v){ on = v; if(v) ensure(); else this.humStop(); },
+    thunk(){ tone(90, .35, .14, 'sine', 38); noise(.08, .05, 200); },
+    click(){ tone(1800, .02, .05, 'square'); tone(900, .03, .04, 'square', null, .02); },
+    blip(f = 700){ tone(f, .09, .05, 'sine', f*1.5); },
+    static(){ noise(.28, .06, 600); },
+    lock(){ tone(1320, .18, .04, 'sine'); },
+    chime(){ [523, 659, 784].forEach((f, i) => tone(f, .5, .05, 'sine', null, i*.11)); },
+    humStart(){ if(!on || hum) return; ensure(); const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = 60; g.gain.value = .008; o.connect(g); g.connect(ctx.destination); o.start(); hum = { o, g }; },
+    humDrop(){ if(hum) hum.o.frequency.exponentialRampToValueAtTime(34, ctx.currentTime + .3); },
+    humStop(){ if(hum){ try{ hum.o.stop(); }catch(e){} hum = null; } }
+  };
+})();
+
+/* ================= NOISE OVERLAY (one canvas, ~12 fps) ================= */
+{
+  const cv = $('#noise'), cx = cv.getContext('2d'), img = cx.createImageData(256, 144);
+  setInterval(() => {
+    if(!FX || document.hidden) return;
+    const d = img.data;
+    for(let i = 0; i < d.length; i += 4){ const v = Math.random()*255; d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255; }
+    cx.putImageData(img, 0, 0);
+  }, 83);
+}
+
+/* ================= CHANNEL STATIC (full-viewport burst) ================= */
+const tune = (() => {
+  const el = $('#tune'), cv = $('#tuneCv'), cx = cv.getContext('2d'), osd = $('#tuneOsd'), img = cx.createImageData(320, 180);
+  function frame(col){
+    const d = img.data, r = col[0], g = col[1], b = col[2];
+    for(let i = 0; i < d.length; i += 4){ const v = Math.random(); d[i] = 40 + v*r*.9; d[i+1] = 40 + v*g*.9; d[i+2] = 40 + v*b*.9; d[i+3] = 255; }
+    cx.putImageData(img, 0, 0);
+  }
+  return {
+    async burst(col, text, ms = 280){
+      osd.textContent = text || '';
+      el.classList.add('on');
+      if(!FX){ await sleep(150); return; }
+      const t0 = performance.now();
+      while(performance.now() - t0 < ms){ frame(col); await sleep(42); }
+    },
+    release(){ el.classList.remove('on'); }
+  };
+})();
+const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+
+/* ================= ROOM API (filled by the 3D module below, safe no-ops otherwise) ================= */
+const room = {
+  ready: false, busy: false, sel: -1,
+  go(r){ goChannel(r); },
+  select(){}, back(){}, fxChanged(){}, setCounter(){}
+};
+function visibleKeys(){ return C.keys.filter(k => k.go !== 'x' || CFG.x); }
+let sel = -1;
+async function goChannel(r){
+  if(r === 'x'){ if(CFG.x) window.open(CFG.x, '_blank', 'noopener'); return; }
+  if(room.busy) return;
+  const k = C.keys.find(k => k.go === r);
+  if(document.body.dataset.route === 'room'){
+    room.busy = true;
+    try{
+      Sound.click();
+      if(room.channel) await room.channel(k);
+      else { Sound.static(); await tune.burst(hexRgb(k.col), k.osd); }
+      location.hash = '#/' + r;
+      await sleep(60); route();
+      setTimeout(tune.release, 120);
+    }finally{ room.busy = false; }
+  } else location.hash = '#/' + r;
+}
+
+/* ================= ROUTER ================= */
+const ROUTES = ['pitch', 'seats', 'how', 'guide', 'p'];
+const CHNUM = { pitch: '01', seats: '02', how: '03', guide: '04', p: '05', '404': '00' };
+let running = true, prevRoute = null;
+function currentRoute(){ return location.hash.replace(/^#\/?/, '').split(/[?/]/)[0]; }
+function route(){
+  const raw = currentRoute(), r = raw && !ROUTES.includes(raw) ? '404' : raw, on = r === '404' || ROUTES.includes(r);
+  document.body.dataset.route = on ? r : 'room';
+  $$('.page').forEach(p => p.classList.toggle('on', p.dataset.page === r));
+  $('#chrome').classList.toggle('on', on);
+  $('#chNum').textContent = on ? 'CH ' + CHNUM[r] : 'CH 01';
+  $$('#nav a').forEach(a => a.classList.toggle('on', a.dataset.r === r));
+  running = !on;
+  document.title = on ? ({ pitch: 'Pitch', seats: 'Seats', how: 'How it works', guide: 'Guide', p: 'Pitch', '404': 'No signal' }[r] + ' · Spinoff') : 'Spinoff: Every hit gets a spinoff.';
+  if(on){ const pg = $('#page-' + r); pg.scrollTop = 0; setTimeout(tune.release, 80); observeHeads(pg); }
+  else { tune.release(); room.enter && room.enter(prevRoute && prevRoute !== 'room'); ensureRoom(); }
+  prevRoute = on ? r : 'room';
+  if(r === 'pitch') pitchShow();
+  if(r === 'seats') renderSeats();
+  if(r === 'guide') renderGuide();
+  if(r === 'p') renderDetail();
+  if(r === 'how') renderHow();
+  document.dispatchEvent(new CustomEvent('spinoff:route', { detail: r }));
+}
+addEventListener('hashchange', route);
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href^="#"]');
+  if(!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || a.target === '_blank') return;
+  const h = a.getAttribute('href'); e.preventDefault();
+  if(location.hash === h || (h === '#/' && !location.hash)){ route(); return; }
+  location.hash = h; setTimeout(route, 60);
+});
+addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if(tag === 'input' || tag === 'textarea'){ if(e.key === 'Escape') e.target.blur(); return; }
+  if(e.key === 'Escape'){
+    if($('#wm').classList.contains('on')){ closeWalletModal(); return; }
+    if($('#sm')?.classList.contains('on')) return;
+    if(document.body.dataset.route !== 'room') location.hash = '#/'; return;
+  }
+  if(document.body.dataset.route !== 'room' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const ks = visibleKeys();
+  if(e.key === 'ArrowRight'){ e.preventDefault(); sel = (sel + 1) % ks.length; room.select(ks[sel].go); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); sel = sel < 1 ? ks.length - 1 : sel - 1; room.select(ks[sel].go); }
+  else if(e.key === 'Enter' && sel >= 0 && !e.target.closest?.('button')){ goChannel(ks[sel].go); }
+  else if(/^[1-5]$/.test(e.key)){ const k = C.keys[+e.key - 1]; if(k.go !== 'x' || CFG.x) goChannel(k.go); }
+});
+
+/* ================= WALLET ================= */
+const WALLETS = [
+  { id: 'phantom',  name: 'Phantom',  col: '#ab9ff2', url: 'https://phantom.app/download',  get: () => window.phantom?.solana?.isPhantom ? window.phantom.solana : (window.solana?.isPhantom ? window.solana : null) },
+  { id: 'solflare', name: 'Solflare', col: '#fc9b1a', url: 'https://solflare.com/download', get: () => window.solflare?.isSolflare ? window.solflare : null },
+  { id: 'backpack', name: 'Backpack', col: '#e33e3f', url: 'https://backpack.app/downloads', get: () => window.backpack?.isBackpack ? window.backpack : (window.xnft?.solana || null) },
+  { id: 'coinbase', name: 'Coinbase Wallet', col: '#3b6cf6', url: 'https://www.coinbase.com/wallet/downloads', get: () => window.coinbaseSolana || null },
+  { id: 'trust',    name: 'Trust Wallet', col: '#2e8ef7', url: 'https://trustwallet.com/download', get: () => window.trustwallet?.solana || null }
+];
+let wallet = store.get('spinoff-wallet', null);   // { addr, id }
+let wProv = null, wmResolve = null;
+const walletDef = id => WALLETS.find(w => w.id === id);
+function walletChanged(){ paintWallet(); renderSeats(); pitchWalletUi(); if(currentRoute() === 'p') renderDetail(); }
+function paintWallet(){
+  const b = $('#wallet');
+  b.innerHTML = `<small>${C.chrome.input}</small>${wallet ? esc(short(wallet.addr)) : C.chrome.connect}`;
+  b.classList.toggle('on', !!wallet);
+}
+function bindProvider(prov){
+  if(prov.__spinoffBound) return; prov.__spinoffBound = true;
+  prov.on?.('accountChanged', pk => {
+    if(pk){ wallet = { ...wallet, addr: pk.toString() }; store.set('spinoff-wallet', wallet); }
+    else { wallet = null; store.set('spinoff-wallet', null); }
+    walletChanged();
+  });
+  prov.on?.('disconnect', () => { wallet = null; store.set('spinoff-wallet', null); walletChanged(); });
+}
+async function connectWith(def){
+  const prov = def.get();
+  if(!prov){ window.open(def.url, '_blank', 'noopener'); toast(C.t.notInstalled(def.name)); return null; }
+  try{
+    const r = await prov.connect();
+    const pk = r?.publicKey || prov.publicKey;
+    if(!pk) throw new Error('no key');
+    wallet = { addr: pk.toString(), id: def.id }; wProv = prov; bindProvider(prov);
+    store.set('spinoff-wallet', wallet); closeWalletModal(); walletChanged(); toast(C.t.walletOk);
+    return wallet;
+  }catch(e){ toast(e?.code === 4001 || /reject|denied|cancel/i.test(e?.message || '') ? C.t.cancelled : C.t.cantConnect(def.name)); return null; }
+}
+function closeWalletModal(){ $('#wm').classList.remove('on'); if(wmResolve){ wmResolve(wallet); wmResolve = null; } }
+function openWalletModal(){
+  $('#wmList').innerHTML = WALLETS.map(w => `<button class="wm__b" data-w="${w.id}"><i style="background:${w.col}"></i><span>${w.name}</span><em>${w.get() ? C.chrome.detected : C.chrome.install}</em></button>`).join('');
+  $('#wm').classList.add('on'); $('#wmList button')?.focus();
+  return new Promise(res => { wmResolve = res; });
+}
+$('#wmList').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if(b) connectWith(walletDef(b.dataset.w)); });
+$('#wmClose').addEventListener('click', closeWalletModal);
+$('#wm').addEventListener('click', e => { if(e.target.id === 'wm') closeWalletModal(); });
+async function connect(){ if(wallet && wProv) return wallet; return openWalletModal(); }
+async function activeProvider(){
+  if(wProv) return wProv;
+  const def = wallet && walletDef(wallet.id), prov = def?.get();
+  if(prov){ try{ await prov.connect({ onlyIfTrusted: true }); }catch(e){} wProv = prov; bindProvider(prov); }
+  return wProv;
+}
+/** Signs a message (never a transaction). Gives back the signature as base64. */
+async function signAction(text){
+  const prov = await activeProvider();
+  if(!prov?.signMessage) throw new Error(C.t.noSign);
+  const r = await prov.signMessage(new TextEncoder().encode(text), 'utf8');
+  const sig = r?.signature ?? r;
+  return L.bytesToB64(sig instanceof Uint8Array ? sig : new Uint8Array(sig));
+}
+const sigErr = err => err?.code === 4001 || /reject|denied|cancel/i.test(err?.message || '') ? C.t.sigCancel : (err?.message || C.err.generic);
+$('#wallet').addEventListener('click', async () => {
+  if(wallet){
+    try{ const pr = await activeProvider(); await pr?.disconnect?.(); }catch(e){}
+    wallet = null; wProv = null; store.set('spinoff-wallet', null); walletChanged(); toast(C.t.disc); return;
+  }
+  openWalletModal();
+});
+addEventListener('load', async () => {
+  if(!wallet){ paintWallet(); return; }
+  const def = walletDef(wallet.id), prov = def?.get();
+  if(!prov){ wallet = null; store.set('spinoff-wallet', null); walletChanged(); return; }
+  try{ const r = await prov.connect({ onlyIfTrusted: true }); wallet = { addr: (r?.publicKey || prov.publicKey).toString(), id: def.id }; wProv = prov; bindProvider(prov); }
+  catch(e){ wallet = null; store.set('spinoff-wallet', null); }
+  walletChanged();
+});
+
+/** Modal that shows the exact message before every signature. Resolves true when the user agrees to sign. */
+function confirmSign(title, message, btn){
+  let m = $('#sm');
+  if(!m){
+    m = document.createElement('div'); m.className = 'wm'; m.id = 'sm'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+    m.innerHTML = `<div class="wm__c" style="width:min(560px,100%)"><h3 id="smT"></h3><pre class="sign" id="smM"></pre><div class="acts"><button class="btn btn--p" id="smOk"></button><button class="btn" id="smNo"></button></div></div>`;
+    document.body.appendChild(m);
+  }
+  $('#smT').textContent = title; $('#smM').textContent = message; $('#smOk').textContent = btn || 'Sign'; $('#smNo').textContent = C.seats.cancel;
+  m.classList.add('on'); $('#smOk').focus();
+  return new Promise(res => {
+    const done = v => { m.classList.remove('on'); $('#smOk').onclick = $('#smNo').onclick = m.onclick = null; res(v); };
+    $('#smOk').onclick = () => done(true); $('#smNo').onclick = () => done(false); m.onclick = e => { if(e.target === m) done(false); };
+  });
+}
+
+/* ================= MARKET + CHAIN READS ================= */
+const fmtUsd = L.fmtUsd;
+const fmtNum = n => !isFinite(n) ? '—' : n >= 1000 ? n.toLocaleString('en-US', { maximumFractionDigits: 0 }) : n >= 1 ? n.toLocaleString('en-US', { maximumFractionDigits: 4 }) : n.toPrecision(4);
+async function fetchMarket(ca){
+  const r = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + encodeURIComponent(ca));
+  if(!r.ok) throw new Error(C.err.market);
+  const j = await r.json();
+  const pairs = (j.pairs || []).filter(p => p.chainId === 'solana' && p.baseToken?.address === ca);
+  if(!pairs.length) return { found: false, ca, pairs: [], liq: 0 };
+  pairs.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
+  const p = pairs[0], mc = p.marketCap || p.fdv || null;
+  return { found: true, ca, pairs, name: p.baseToken.name || '', symbol: p.baseToken.symbol || '', mc: isFinite(+mc) && +mc > 0 ? +mc : null,
+    price: parseFloat(p.priceUsd), liq: pairs.reduce((s, x) => s + (x.liquidity?.usd || 0), 0), vol: pairs.reduce((s, x) => s + (x.volume?.h24 || 0), 0),
+    chg: p.priceChange?.h24, img: httpsOnly(p.info?.imageUrl) };
+}
+async function rpc(method, params){
+  const r = await fetch(CFG.rpc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
+  if(!r.ok) throw new Error(C.err.rpc);
+  const j = await r.json(); if(j.error) throw new Error(C.err.rpc);
+  return j.result;
+}
+async function tokenBalance(owner, mint){
+  let r;
+  try{ r = await rpc('getTokenAccountsByOwner', [owner, { mint }, { encoding: 'jsonParsed' }]); }
+  catch(e){ throw new Error(C.err.bal); }
+  return (r.value || []).reduce((s, a) => s + (+a.account.data.parsed.info.tokenAmount.uiAmount || 0), 0);
+}
+const post = (path, body) => CFG.api ? fetch(CFG.api.replace(/\/$/, '') + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => ({ ok: false })) : Promise.resolve({ ok: true });
+
+/* ================= STORE: pitches (saved in this browser; mirrored to CFG.api when set) ================= */
+let pitches = store.get('spinoff-pitches', []);
+if(!Array.isArray(pitches)) pitches = [];
+let samples = store.get('spinoff-samples', []);
+if(!Array.isArray(samples)) samples = [];
+samples = samples.filter(s => s && String(s.id).startsWith('example-'));   // drop listings saved by earlier versions
+const savePitches = () => store.set('spinoff-pitches', pitches);
+const allPitches = () => [...pitches, ...samples];
+const realPitches = () => pitches;
+const linkFor = p => baseUrl() + '#/p/' + L.encodePitch(p);
+const nowIso = () => new Date().toISOString();
+function marketStatus(p){ return p.sample ? p.sampleStatus : L.statusOf(p, p.market, CFG); }
+function paintCounter(){ const el = $('#counter'); if(el) el.textContent = C.room.counter(realPitches().length); }
+
+/* =====================================================================
+   TV CANVASES (pitch stage): bars, static, lock, no-signal, title card
+   ===================================================================== */
+const BARS = ['#EDEBE6', '#FFD400', '#19F0FF', '#39FF88', '#FF2BD6', '#FF5A4D', '#2B4BFF'];
+const nz = document.createElement('canvas'); nz.width = 96; nz.height = 72;
+const nzx = nz.getContext('2d'), nzImg = nzx.createImageData(96, 72);
+function noiseFrame(tint = [255, 255, 255]){
+  const d = nzImg.data;
+  for(let i = 0; i < d.length; i += 4){ const v = Math.random(); d[i] = v*tint[0]; d[i+1] = v*tint[1]; d[i+2] = v*tint[2]; d[i+3] = 255; }
+  nzx.putImageData(nzImg, 0, 0);
+}
+function drawNoise(ctx, w, h, tint){ noiseFrame(tint); ctx.imageSmoothingEnabled = false; ctx.drawImage(nz, 0, 0, w, h); }
+function drawBarsPic(ctx, w, h, line1, line2){
+  const bw = w/7; BARS.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i*bw, 0, bw + 1, h*.72); });
+  const lw = w/7; ['#2B4BFF', '#000', '#FF2BD6', '#000', '#19F0FF', '#000', '#EDEBE6'].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i*lw, h*.72, lw + 1, h*.1); });
+  ctx.fillStyle = '#111'; ctx.fillRect(0, h*.82, w, h*.18);
+  if(line1){
+    ctx.fillStyle = '#000'; ctx.fillRect(w*.2, h*.3, w*.6, h*.34);
+    ctx.fillStyle = '#EDEBE6'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `${Math.round(h*.13)}px Anton, Impact, sans-serif`; ctx.fillText(line1, w/2, h*.43);
+    ctx.fillStyle = '#39FF88'; ctx.font = `${Math.round(h*.085)}px VT323, monospace`; ctx.fillText(line2 || '', w/2, h*.56);
+  }
+}
+function drawShowPic(ctx, w, h, m){
+  const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#151a26'); g.addColorStop(1, '#07080C');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#FF2BD6'; ctx.font = `${Math.round(h*.1)}px VT323, monospace`; ctx.fillText('PARENT', w/2, h*.2);
+  ctx.fillStyle = '#EDEBE6'; ctx.font = `${Math.round(h*.3)}px Anton, Impact, sans-serif`; ctx.fillText(((m && m.symbol) || '?')[0].toUpperCase(), w/2, h*.46);
+  ctx.font = `${Math.round(h*.11)}px Anton, Impact, sans-serif`; ctx.fillText(((m && m.name) || '').slice(0, 22).toUpperCase(), w/2, h*.72);
+  ctx.fillStyle = '#19F0FF'; ctx.font = `${Math.round(h*.1)}px VT323, monospace`; ctx.fillText('$' + ((m && m.symbol) || ''), w/2, h*.86);
+}
+function drawTitlePic(ctx, w, h, c){
+  const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#1a1024'); g.addColorStop(1, '#07080C');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#39FF88'; ctx.font = `${Math.round(h*.12)}px VT323, monospace`; ctx.fillText(C.pitch.pilot, w/2, h*.17);
+  ctx.fillStyle = '#EDEBE6'; ctx.font = `${Math.round(h*.13)}px Anton, Impact, sans-serif`;
+  wrapText(ctx, (c.name || '').toUpperCase(), w/2, h*.4, w*.86, h*.15);
+  ctx.fillStyle = '#FF2BD6'; ctx.font = `${Math.round(h*.1)}px VT323, monospace`; ctx.fillText('$' + (c.symbol || ''), w/2, h*.7);
+  ctx.save(); ctx.translate(w/2, h*.86); ctx.rotate(-.07);
+  ctx.strokeStyle = '#FFB000'; ctx.fillStyle = '#FFB000'; ctx.lineWidth = 2;
+  ctx.font = `${Math.round(h*.09)}px Anton, Impact, sans-serif`; const tw = ctx.measureText(C.pitch.card.stamp).width + 18;
+  ctx.strokeRect(-tw/2, -h*.06, tw, h*.12); ctx.fillText(C.pitch.card.stamp, 0, 2); ctx.restore();
+}
+function wrapText(ctx, text, x, y, maxW, lh){
+  const words = text.split(' '), lines = []; let cur = '';
+  for(const w of words){ const t = cur ? cur + ' ' + w : w; if(ctx.measureText(t).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t; }
+  if(cur) lines.push(cur);
+  lines.slice(0, 3).forEach((l, i, a) => ctx.fillText(l, x, y + (i - (a.length - 1)/2)*lh));
+}
+const tvs = {};
+function mkTV(key, cvId, mode){ const cv = $(cvId); tvs[key] = { cv, ctx: cv.getContext('2d'), mode, t0: performance.now(), data: {}, snap: null, k: 0 }; return tvs[key]; }
+function setTV(tv, mode, data){ tv.mode = mode; tv.t0 = performance.now(); if(data) tv.data = data; }
+function paintTV(tv, now){
+  const { ctx, cv } = tv, w = cv.width, h = cv.height, t = now - tv.t0;
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  switch(tv.mode){
+    case 'off': {
+      ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, w, h);
+      const g = ctx.createLinearGradient(0, 0, w, h); g.addColorStop(0, 'rgba(255,255,255,.06)'); g.addColorStop(.4, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#7a1d18'; ctx.beginPath(); ctx.arc(w - 18, h - 18, 4, 0, 7); ctx.fill(); break;
+    }
+    case 'idle': drawBarsPic(ctx, w, h, 'STAND BY', 'PICK A CHANNEL'); break;
+    case 'static': {
+      drawNoise(ctx, w, h);
+      const y = ((t/1.2) % (h + 60)) - 30; ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, y, w, 30);
+      break;
+    }
+    case 'lock': {
+      const p = Math.min(1, t/700), y = p*h;
+      drawShowPic(ctx, w, h, tv.data); ctx.save(); ctx.beginPath(); ctx.rect(0, y, w, h - y); ctx.clip(); drawNoise(ctx, w, h); ctx.restore();
+      const wob = (1 - p)*6*Math.sin(t/30); if(wob){ ctx.drawImage(cv, wob, 0); }
+      if(p >= 1) tv.mode = 'show'; break;
+    }
+    case 'show': drawShowPic(ctx, w, h, tv.data); break;
+    case 'nosig': {
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+      if(t < 380){ const k = 1 - t/380; ctx.fillStyle = '#fff'; const hh = Math.max(2, h*k*k), ww = Math.max(4, w*k); ctx.fillRect(w/2 - ww/2, h/2 - hh/2, ww, hh); }
+      else { drawNoise(ctx, w, h, [150, 150, 150]); ctx.fillStyle = '#000'; ctx.fillRect(w*.18, h*.38, w*.64, h*.24);
+        ctx.fillStyle = '#39FF88'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `${Math.round(h*.16)}px VT323, monospace`; ctx.fillText(C.pitch.noSig, w/2, h/2); }
+      break;
+    }
+    case 'split': splitDraw(tv, ctx, w, h); break;
+    case 'power': {
+      const p = Math.min(1, t/450);
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+      const hh = p < .35 ? 3 : 3 + (h - 3)*((p - .35)/.65);
+      ctx.save(); ctx.beginPath(); ctx.rect(0, h/2 - hh/2, w, hh); ctx.clip();
+      ctx.translate(Math.sin(t/25)*(1 - p)*10, 0); drawTitlePic(ctx, w, h, tv.data);
+      if(p < .35){ ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); }
+      ctx.restore(); if(p >= 1) tv.mode = 'title'; break;
+    }
+    case 'title': drawTitlePic(ctx, w, h, tv.data); break;
+  }
+}
+const tintCache = new Map();
+function tinted(src, color){
+  const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+  const x = c.getContext('2d'); x.drawImage(src, 0, 0); x.globalCompositeOperation = 'multiply'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height);
+  x.globalCompositeOperation = 'destination-in'; x.drawImage(src, 0, 0); return c;
+}
+function splitDraw(tv, ctx, w, h){
+  const k = tv.k, dx = 24*k*(w/320);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h); ctx.globalCompositeOperation = 'lighter';
+  ctx.drawImage(tv.snapC, -dx, 0); ctx.drawImage(tv.snapM, dx, 0); ctx.globalAlpha = .5; ctx.drawImage(tv.snap, 0, 0); ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  if(k > .2){ for(let i = 0; i < 4; i++){ const y = Math.floor(Math.random()*h*.9), sh = 6 + Math.random()*14, off = (Math.random() - .5)*60*k; ctx.drawImage(tv.cv, 0, y, w, sh, off, y, w, sh); } }
+}
+let tvLoop = 0;
+function startTVLoop(){
+  if(tvLoop) return;
+  let last = 0;
+  const tick = now => {
+    tvLoop = requestAnimationFrame(tick);
+    if(document.hidden || now - last < (FX ? 66 : 250)) return; last = now;
+    for(const k in tvs){ if(!tvs[k].frozen) paintTV(tvs[k], now); }
+  };
+  tvLoop = requestAnimationFrame(tick);
+}
+function stopTVLoop(){ cancelAnimationFrame(tvLoop); tvLoop = 0; }
+document.addEventListener('spinoff:route', e => { if(e.detail === 'pitch') startTVLoop(); else stopTVLoop(); });
+
+/* typewriter closed captions */
+let typeTok = 0;
+async function typeCaption(el, text, ms = 30){
+  const tok = ++typeTok; el.hidden = false;
+  if(!FX){ el.textContent = text; return; }
+  for(let i = 1; i <= text.length; i++){ if(tok !== typeTok) return; el.textContent = text.slice(0, i); await sleep(ms); }
+}
+
+/* =====================================================================
+   PITCH FLOW
+   ===================================================================== */
+const P = { parent: null, gate: null, seed: 0, saved: null, msg: '', signing: false, busy: false, stale: false };
+let pitchBuilt = false;
+function buildPitchStatic(){
+  if(pitchBuilt) return; pitchBuilt = true;
+  $('#page-pitch .label').textContent = 'Pitch';
+  $('#flow').innerHTML = C.pitch.chips.map((t, i) => `<li><i>${i + 1}</i>${t}</li>`).join('');
+  $('#pitchLede').textContent = C.pitch.lede();
+  $('#s1h').textContent = C.pitch.chips[0]; $('#parentLbl').textContent = C.pitch.lbl; $('#caP').placeholder = C.pitch.ph; $('#tuneBtn').textContent = C.pitch.tune;
+  $('#s2h').textContent = C.pitch.s2; $('#s2lock').textContent = C.pitch.lockPilot; $('#srTag').textContent = C.pitch.sr; $('#srBadge').textContent = C.pitch.srBadge;
+  $('#lblName').textContent = C.pitch.lName; $('#lblTick').textContent = C.pitch.lTick; $('#lblPrem').textContent = C.pitch.lPrem; $('#rerollBtn').textContent = C.pitch.reroll;
+  $('#s3h').textContent = C.pitch.s3; $('#signBoxT').textContent = C.pitch.boxT; $('#spinBtn').textContent = C.pitch.spin; $('#signNote').textContent = C.pitch.note; $('#s3lock').textContent = C.pitch.lockPilot;
+  $('#s4h').textContent = C.pitch.s4; $('#s4lede').textContent = C.pitch.s4lede; $('#childLbl').textContent = C.pitch.childLbl; $('#caC').placeholder = C.pitch.ph; $('#attachBtn').textContent = C.pitch.attach;
+  $('#runT').textContent = C.pitch.run;
+  $('#trustP').innerHTML = C.pitch.trust.map(t => `<div><i>✓</i>${esc(t)}</div>`).join('');
+  $('#errTick').textContent = C.pitch.errTick; $('#errPrem').textContent = C.pitch.errPrem();
+  if(CFG.launchpadUrl && httpsOnly(CFG.launchpadUrl)) $('#launchRow').innerHTML = `<a class="btn" href="${esc(CFG.launchpadUrl)}" target="_blank" rel="noopener">${esc(CFG.launchpadLabel || 'Launch it')}</a>`;
+  else $('#launchRow').remove();
+  mkTV('p', '#cvP', 'idle'); mkTV('c', '#cvC', 'off');
+  $('#osdP').textContent = 'CH 01'; $('#osdC').textContent = '';
+  setFlow(1); paintRundown();
+}
+function setFlow(n){ $$('#flow li').forEach((li, i) => { li.classList.toggle('done', i + 1 < n); li.classList.toggle('on', i + 1 === n); }); }
+function unlock(id, on){ $(id).classList.toggle('locked', !on); }
+function pitchShow(){ buildPitchStatic(); if(P.stale && P.saved){ pitchReset(); } P.stale = false; startTVLoop(); }
+document.addEventListener('spinoff:route', e => { if(e.detail !== 'pitch' && P.saved) P.stale = true; });
+function pitchReset(){
+  Object.assign(P, { parent: null, gate: null, seed: 0, saved: null, msg: '', signing: false, busy: false });
+  $('#caP').value = ''; $('#caC').value = ''; $('#parentBox').innerHTML = ''; $('#msgP').textContent = ''; $('#msgS').textContent = ''; $('#msgA').textContent = ''; $('#fpLine').textContent = '';
+  $('#s2body').hidden = true; $('#s3body').hidden = true; $('#s2lock').hidden = false; $('#s3lock').hidden = false; $('#attachForm').hidden = true;
+  $('#print').classList.remove('on'); $('#cardActs').innerHTML = '';
+  unlock('#s2', false); unlock('#s3', false); unlock('#s4', false);
+  setTV(tvs.p, 'idle'); setTV(tvs.c, 'off'); tvs.p.frozen = false; $('#osdC').textContent = '';
+  $('#ccP').hidden = true; $('#ccC').hidden = true; setFlow(1); paintRundown();
+}
+function parentCard(m, gate, age){
+  const img = m.img ? `style="background-image:url('${esc(m.img)}')"` : '';
+  const chg = isFinite(m.chg) ? `<b class="${m.chg >= 0 ? 'up' : 'dn'}">${m.chg >= 0 ? '+' : ''}${(+m.chg).toFixed(1)}%</b>` : '<b>—</b>';
+  const rows = gate.checks.map(c => {
+    const label = c.id === 'market' ? C.pitch.preMarket : c.id === 'age' ? C.pitch.preAge() : C.pitch.preLiq();
+    const val = c.id === 'market' ? c.value : c.id === 'age' ? (c.value === null ? '—' : C.pitch.days(c.value)) : fmtUsd(c.value);
+    return `<li class="${c.ok ? 'ok' : 'no'}"><i>${c.ok ? '✓' : '✗'}</i><span>${esc(label)}</span><b>${esc(val)}</b></li>`;
+  }).join('');
+  return `<div class="coin" style="margin-top:14px"><span class="tag">${C.pitch.tagParent}</span>
+    <div class="coin__img" ${img}>${m.img ? '' : esc((m.symbol || '?')[0])}</div>
+    <div style="min-width:0"><div class="coin__name">${esc(m.name)}</div><div class="coin__tick">$${esc(m.symbol)} · ${esc(short(m.ca))}</div></div>
+    <div class="kvs">
+      <div class="kv"><span>${C.pitch.mcap}</span><b>${m.mc ? fmtUsd(m.mc) : '—'}</b></div>
+      <div class="kv"><span>${C.pitch.liq}</span><b>${fmtUsd(m.liq)}</b></div>
+      <div class="kv"><span>${C.pitch.vol}</span><b>${fmtUsd(m.vol)}</b></div>
+      <div class="kv"><span>${C.pitch.age}</span><b>${age === null ? '—' : C.pitch.days(age)}</b></div>
+      <div class="kv"><span>${C.pitch.chg}</span>${chg}</div></div></div>
+    <h3 style="font-size:22px;margin-top:16px">${C.pitch.pre}</h3><ul class="pre">${rows}</ul>`;
+}
+async function tuneIn(){
+  if(P.busy) return;
+  const ca = $('#caP').value.trim(), msg = $('#msgP'); msg.className = 'msg'; msg.textContent = '';
+  const fail = (text) => {
+    $('#parentBox').innerHTML = ''; msg.className = 'msg err'; msg.textContent = text; P.parent = null;
+    setTV(tvs.p, 'nosig'); $('#osdP').textContent = C.pitch.noSig; $('#ccP').hidden = false; $('#ccP').textContent = text; Sound.static();
+    unlock('#s2', false); unlock('#s3', false); $('#s2body').hidden = true; $('#s3body').hidden = true; $('#s2lock').hidden = false; $('#s3lock').hidden = false; setFlow(1);
+  };
+  if(!L.isCA(ca)) return fail(C.pitch.bad);
+  P.busy = true; $('#tuneBtn').disabled = true; $('#tuneBtn').classList.add('wait');
+  setTV(tvs.p, 'static'); $('#osdP').textContent = 'CH 01'; typeTok++; $('#ccP').hidden = false; $('#ccP').textContent = C.pitch.looking;
+  try{
+    const [m] = await Promise.all([fetchMarket(ca), sleep(FX ? 500 : 0)]);
+    const now = Date.now(), gate = L.checkGate(m, CFG, now), age = m.found ? L.ageDays(m.pairs, now) : null;
+    if(m.found) $('#parentBox').innerHTML = parentCard(m, gate, age); else $('#parentBox').innerHTML = '';
+    if(!gate.ok){
+      const r = gate.reason;
+      return fail(r === 'notfound' ? C.pitch.notFound(ca) : r === 'young' ? C.pitch.young(age) : r === 'thin' ? C.pitch.thin(m.liq) : C.pitch.nomc);
+    }
+    m.age = age; P.parent = m; P.gate = gate; P.seed = 0;
+    $('#parentBox').insertAdjacentHTML('beforeend', `<p class="pass">${C.pitch.pass}</p>`);
+    setTV(tvs.p, 'lock', { name: m.name, symbol: m.symbol }); Sound.lock(); $('#osdP').textContent = 'CH 01 · LOCK';
+    $('#ccP').hidden = true; setFlow(2);
+    unlock('#s2', true); $('#s2body').hidden = false; $('#s2lock').hidden = true;
+    fillShowrunner(true); refreshSignBox();
+  }catch(e){ fail(e.message === C.err.market ? C.pitch.down : C.pitch.down); }
+  finally{ P.busy = false; $('#tuneBtn').disabled = false; $('#tuneBtn').classList.remove('wait'); }
+}
+function fillShowrunner(intro){
+  const m = P.parent; if(!m) return;
+  const r = L.showrunner({ name: m.name, symbol: m.symbol, ageDays: m.age }, P.seed, CFG.pitchPremiseMax);
+  $('#inName').value = r.name; $('#inTick').value = r.ticker; $('#inPrem').value = r.premise;
+  validateFields();
+  typeCaption($('#ccP'), intro ? C.pitch.srIntro(m.name, m.age) : C.pitch.srReroll, 30);
+  updateChildPreview();
+}
+function updateChildPreview(){ /* child TV stays OFF until the pitch is signed */ }
+function validateFields(){
+  const t = $('#inTick'), cleaned = L.sanitizeTicker(t.value);
+  const tickErr = t.value !== cleaned || !cleaned; if(t.value !== cleaned) t.value = cleaned;
+  $('#errTick').hidden = !(tickErr && (cleaned.length === 0 || $('#inTick').dataset.dirty === '1'));
+  const prem = $('#inPrem').value, over = prem.length > CFG.pitchPremiseMax;
+  $('#premCnt').textContent = C.pitch.s2 && `${prem.length}/${CFG.pitchPremiseMax}`; $('#errPrem').hidden = !over;
+  $('#spinBtn').disabled = P.signing || !!P.saved || over || !cleaned || !L.cleanLine($('#inName').value) || !L.cleanLine(prem);
+  refreshSignBox();
+}
+function fields(){ return { name: L.capText($('#inName').value, L.NAME_MAX), symbol: L.sanitizeTicker($('#inTick').value), premise: L.cleanLine($('#inPrem').value) }; }
+function refreshSignBox(){
+  const m = P.parent; if(!m || P.saved){ return; }
+  unlock('#s3', true); $('#s3body').hidden = false; $('#s3lock').hidden = true;
+  const f = fields();
+  P.msg = L.buildMessage('pitch', { parentName: m.name, parentTicker: m.symbol, parentCA: m.ca, childName: f.name, childTicker: f.symbol, premise: f.premise, wallet: wallet ? wallet.addr : '(connect a wallet)', time: nowIso() });
+  $('#signBox').textContent = P.msg;
+  $('#msgS').className = 'msg'; if(!wallet && !P.signing) $('#msgS').textContent = C.pitch.needWallet;
+  else if(!P.signing && $('#msgS').textContent === C.pitch.needWallet) $('#msgS').textContent = '';
+}
+function pitchWalletUi(){ if(P.parent && !P.saved) refreshSignBox(); }
+async function reroll(){
+  if(!P.parent) return;
+  P.seed++; setTV(tvs.p, 'static'); Sound.static(); $('#osdP').textContent = 'CH 0' + (1 + (P.seed % 8));
+  await sleep(FX ? 260 : 0); setTV(tvs.p, 'show', { name: P.parent.name, symbol: P.parent.symbol }); $('#osdP').textContent = 'CH 01';
+  fillShowrunner(false);
+}
+const fpOf = p => L.sha256hex(L.pitchMessage(p) + '\n' + p.sig);
+
+async function spinOff(){
+  if(!P.parent || P.signing || P.saved) return;
+  const f = fields(), m = P.parent, out = $('#msgS');
+  if(!wallet){ const w = await connect(); if(!w){ return; } refreshSignBox(); }
+  if(pitches.some(p => p.parent.ca === m.ca && p.child.name === f.name && p.child.symbol === f.symbol)){ out.className = 'msg err'; out.textContent = C.t.dup; toast(C.t.dup); return; }
+  const message = $('#signBox').textContent;   // exactly what is shown
+  const time = message.split('\n').find(l => l.startsWith('Time: ')).slice(6);
+  P.signing = true; const btn = $('#spinBtn'); btn.disabled = true; btn.classList.add('wait'); btn.textContent = C.pitch.wait; out.className = 'msg'; out.textContent = '';
+  let sig;
+  try{
+    if(message.includes('(connect a wallet)')) throw new Error(C.err.generic);
+    sig = await signAction(message);
+  }catch(err){
+    P.signing = false; btn.classList.remove('wait'); btn.textContent = C.pitch.spin; out.className = 'msg err'; out.textContent = sigErr(err); toast(sigErr(err)); validateFields(); return;
+  }
+  const p = { parent: { ca: m.ca, name: m.name, symbol: m.symbol }, child: { name: f.name, symbol: f.symbol }, premise: f.premise, proposer: wallet.addr, time, sig };
+  p.id = L.pitchIdFromSig(sig); p.createdAt = Date.now(); p.claims = []; p.market = null; p.parentImg = m.img || '';
+  let fp = '';
+  try{ fp = await fpOf(p); }catch(e){ out.className = 'msg err'; out.textContent = C.err.fp; }
+  p.fp = fp;
+  pitches.unshift(p); savePitches(); P.saved = p; P.signing = false; paintCounter(); post('/pitches', p);
+  btn.classList.remove('wait'); btn.textContent = C.pitch.spin; btn.disabled = true;
+  if(fp){ $('#fpLine').textContent = `sig ${fp.slice(0, 16)}`; toast(C.pitch.signed(fp.slice(0, 16))); } else toast(C.t.saved);
+  setFlow(3); Sound.chime();
+  $('#tv2').scrollIntoView({ block: 'center', behavior: FX ? 'smooth' : 'auto' }); await sleep(FX ? 650 : 0);
+  await playSplit(p);
+  setFlow(4); unlock('#s4', true); $('#attachForm').hidden = false; paintRundown();
+}
+
+/* ---------- THE SPLIT (about 2.4 s) ---------- */
+async function playSplit(p){
+  const tvP = tvs.p, tvC = tvs.c, cvG = $('#cvG'), tv2 = $('#tv2');
+  const childData = { name: p.child.name, symbol: p.child.symbol };
+  const showCard = () => { drawCard($('#cardCv'), p, 'pilot'); renderCardActions($('#cardActs'), p); $('#print').classList.add('on'); };
+  const end = () => { setTV(tvP, 'show', { name: p.parent.name, symbol: p.parent.symbol }); tvP.frozen = false; setTV(tvC, 'title', childData); $('#osdC').textContent = C.pitch.pilot; paintTV(tvP, performance.now()); paintTV(tvC, performance.now()); showCard(); $('#cardCv').scrollIntoView({ block: 'center', behavior: FX ? 'smooth' : 'auto' }); };
+  if(!FX){ await sleep(150); end(); return; }
+  await document.fonts.ready.catch(() => {});
+  // freeze + snapshots
+  tvP.frozen = true; paintTV(tvP, performance.now());
+  const snap = document.createElement('canvas'); snap.width = tvP.cv.width; snap.height = tvP.cv.height; snap.getContext('2d').drawImage(tvP.cv, 0, 0);
+  tvP.snap = snap; tvP.snapC = tinted(snap, '#19F0FF'); tvP.snapM = tinted(snap, '#FF2BD6');
+  Sound.humDrop();
+  const rP = $('#stageP').getBoundingClientRect(), rC = $('#stageC').getBoundingClientRect(), rT = tv2.getBoundingClientRect();
+  cvG.width = Math.round(rT.width/2); cvG.height = Math.round(rT.height/2);
+  const gx = cvG.getContext('2d'), sx = cvG.width/rT.width, sy = cvG.height/rT.height;
+  const t0 = performance.now(); let shown = false, powered = false, flashed = false;
+  tvP.mode = 'split';
+  await new Promise(res => {
+    const tick = now => {
+      const t = now - t0;
+      if(t < 200){ tvP.k = 0; }
+      else if(t < 700){ tvP.k = (t - 200)/500; tvP.mode = 'split'; paintTV(tvP, now); }
+      else if(t < 1300){
+        const q = (t - 700)/600, e = 1 - Math.pow(1 - q, 3);
+        tvP.k = Math.max(0, 1 - q*1.4); paintTV(tvP, now);
+        gx.clearRect(0, 0, cvG.width, cvG.height); cvG.style.opacity = 1;
+        const x0 = (rP.left - rT.left)*sx, y0 = (rP.top - rT.top)*sy, x1 = (rC.left - rT.left)*sx, y1 = (rC.top - rT.top)*sy;
+        const sc = 1 - .45*e, w = rP.width*sx*sc, h = rP.height*sy*sc;
+        gx.globalAlpha = .9*(1 - q*.3); gx.drawImage(tvP.snapM, x0 + (x1 - x0 + rC.width*sx*.5 - w*.5)*e + (rP.width*sx - w)*.5*(1 - e), y0 + (y1 - y0 + rC.height*sy*.5 - h*.5)*e + (rP.height*sy - h)*.5*(1 - e), w, h);
+        gx.globalAlpha = 1;
+        if(q > .85 && !flashed){ flashed = true; $('#stageP').animate([{ filter: 'brightness(2.4)' }, { filter: 'none' }], 220); }
+      } else if(t < 1700){
+        if(!flashed){ flashed = true; }
+        cvG.style.opacity = 0; if(tvP.mode === 'split'){ tvP.k = 0; setTV(tvP, 'show', { name: p.parent.name, symbol: p.parent.symbol }); tvP.frozen = false; }
+        if(!powered){ powered = true; setTV(tvC, 'power', childData); $('#osdC').textContent = C.pitch.pilot; Sound.thunk(); }
+      } else if(!shown){
+        shown = true; drawCard($('#cardCv'), p, 'pilot'); renderCardActions($('#cardActs'), p); $('#print').classList.add('on');
+        setTimeout(() => $('#cardCv').scrollIntoView({ block: 'center', behavior: 'smooth' }), 400);
+      }
+      if(t >= 2400){ res(); return; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  cvG.style.opacity = 0; end();
+}
+
+/* ---------- episode card (1200x630) ---------- */
+function drawCard(cv, p, st){
+  const x = cv.getContext('2d'), W = 1200, H = 630;
+  x.clearRect(0, 0, W, H);
+  x.fillStyle = '#07080C'; x.fillRect(0, 0, W, H);
+  // faint scanlines
+  x.fillStyle = 'rgba(255,255,255,.025)'; for(let y = 0; y < H; y += 4) x.fillRect(0, y, W, 1);
+  // TV frame with channel-split ghosts
+  const fx = 70, fy = 120, fw = 1060, fh = 400, r = 54;
+  const rr = (dx, col, fill) => { x.beginPath(); x.roundRect(fx + dx, fy, fw, fh, r); if(fill){ x.fillStyle = fill; x.fill(); } x.lineWidth = 8; x.strokeStyle = col; x.stroke(); };
+  rr(-18, '#19F0FF'); rr(18, '#FF2BD6'); rr(0, '#EDEBE6', '#0E1118');
+  // top
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  x.fillStyle = '#EDEBE6'; x.font = '64px Anton, Impact, sans-serif'; x.fillText(C.pitch.card.top, 70, 84);
+  x.fillStyle = '#39FF88'; x.font = '34px VT323, monospace'; x.textAlign = 'right'; x.fillText('CH 01 · ' + C.pitch.chips[3].toUpperCase().slice(0, 0) + C.pitch.pilot, W - 70, 80); x.textAlign = 'left';
+  // mark
+  x.save(); x.translate(280, 24); x.scale(.5, .5); x.lineWidth = 8; x.lineCap = x.lineJoin = 'round';
+  x.strokeStyle = '#EDEBE6'; x.stroke(new Path2D('M60 42 L38 16 M60 42 L82 16'));
+  x.strokeStyle = '#19F0FF'; x.beginPath(); x.roundRect(14, 40, 76, 62, 18); x.stroke();
+  x.strokeStyle = '#FF2BD6'; x.beginPath(); x.roundRect(38, 40, 76, 62, 18); x.stroke(); x.restore();
+  // body text
+  x.fillStyle = '#EDEBE6'; x.font = '92px Anton, Impact, sans-serif';
+  let name = p.child.name.toUpperCase(); while(x.measureText(name).width > 900 && name.length > 4) name = name.slice(0, -2);
+  if(name !== p.child.name.toUpperCase()) name += '…';
+  x.fillText(name, 130, 290);
+  x.fillStyle = '#FF2BD6'; x.font = '60px VT323, monospace'; x.fillText('$' + p.child.symbol, 130, 350);
+  x.fillStyle = '#8B90A3'; x.font = '40px "Space Grotesk", system-ui, sans-serif';
+  let pl = `Spinoff of ${p.parent.name} · $${p.parent.symbol}`; while(x.measureText(pl).width > 900 && pl.length > 10) pl = pl.slice(0, -2);
+  x.fillText(pl, 130, 410);
+  x.fillStyle = '#EDEBE6'; x.font = '26px "Space Grotesk", system-ui, sans-serif'; x.fillText(C.pitch.card.foot, 130, 476);
+  // stamp
+  x.save(); x.translate(930, 270); x.rotate(-.1); x.strokeStyle = x.fillStyle = '#FFB000'; x.lineWidth = 6;
+  x.font = '54px Anton, Impact, sans-serif'; const label = st === 'official' ? 'OFFICIAL' : C.pitch.card.stamp, tw = x.measureText(label).width + 40;
+  x.strokeRect(-tw/2, -42, tw, 84); x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(label, 0, 4); x.restore();
+  // footer
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+  x.fillStyle = '#8B90A3'; x.font = '30px "JetBrains Mono", monospace'; x.fillText('sig ' + (p.fp ? p.fp.slice(0, 8) : '--------'), 70, 584);
+  const bw = 1060/7; ['#EDEBE6', '#FFD400', '#19F0FF', '#39FF88', '#FF2BD6', '#FF5A4D', '#2B4BFF'].forEach((c, i) => { x.fillStyle = c; x.fillRect(70 + i*bw, 604, bw + 1, 8); });
+  x.fillStyle = '#8B90A3'; x.textAlign = 'right'; x.fillText(L.short(p.proposer), W - 70, 584);
+}
+function renderCardActions(el, p){
+  const B = C.pitch.cardBtns;
+  el.innerHTML = `<button class="btn btn--s" data-a="dl">${B.dl}</button>${CFG.x !== undefined ? `<button class="btn btn--s" data-a="x">${B.x}</button>` : ''}<button class="btn btn--s" data-a="copy">${B.copy}</button><button class="btn btn--s" data-a="proof">${B.proof}</button>`;
+  el.onclick = e => { const b = e.target.closest('[data-a]'); if(b) cardAction(b.dataset.a, p, el.parentElement.querySelector('canvas')); };
+}
+function download(name, file){ const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+async function cardAction(a, p, cv){
+  if(a === 'dl'){ cv.toBlob(b => { if(b){ download(`spinoff-${p.child.symbol}.png`, b); toast(C.t.cardDl); } }, 'image/png'); }
+  else if(a === 'copy'){ const l = linkFor(p); try{ await navigator.clipboard.writeText(l); toast(C.t.copied); }catch(e){ toast(l); } }
+  else if(a === 'proof'){ download(`spinoff-proof-${p.child.symbol}.json`, new Blob([JSON.stringify(L.proofFile(p, p.fp || ''), null, 2)], { type: 'application/json' })); toast(C.t.proofDl); }
+  else if(a === 'x'){
+    const st = marketStatus(p), T = C.pitch.shareX;
+    const txt = st === 'official' ? T.official(p.child.name, p.child.symbol) : st === 'onair' ? T.onair(p.child.name, p.child.symbol, p.parent.name) : T.pilot(p.child.name, p.child.symbol, p.parent.name, p.parent.symbol);
+    window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(txt) + '&url=' + encodeURIComponent(linkFor(p)), '_blank', 'noopener');
+  }
+}
+
+/* ---------- step 4: attach the child ---------- */
+function paintRundown(){
+  const p = P.saved, f = P.parent ? fields() : { name: '', symbol: '', premise: '' };
+  const done = p ? [true, true, true, true, !!p.child.ca, !!p.child.ca] : [!!f.name && !!P.parent, !!f.symbol && !!P.parent, !!f.premise && !!P.parent, false, false, false];
+  $('#run').innerHTML = C.pitch.runItems.map((t, i) => `<li class="${done[i] ? 'ok' : ''}">${esc(t)}</li>`).join('');
+}
+['#inName', '#inTick', '#inPrem'].forEach(s => $(s).addEventListener('input', () => { if(s === '#inTick') $('#inTick').dataset.dirty = '1'; validateFields(); paintRundown(); }));
+$('#rerollBtn').addEventListener('click', reroll);
+$('#tuneForm').addEventListener('submit', e => { e.preventDefault(); tuneIn(); });
+$('#spinBtn').addEventListener('click', spinOff);
+$('#attachForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const p = P.saved, out = $('#msgA'), ca = $('#caC').value.trim(); out.className = 'msg'; out.textContent = '';
+  if(!p) return;
+  if(!L.isCA(ca)){ out.className = 'msg err'; out.textContent = C.pitch.bad; return; }
+  if(ca === p.parent.ca){ out.className = 'msg err'; out.textContent = C.pitch.errSame; return; }
+  if(!wallet){ const w = await connect(); if(!w) return; }
+  if(wallet.addr !== p.proposer){ out.className = 'msg err'; out.textContent = C.pitch.errWallet; return; }
+  $('#attachBtn').disabled = true;
+  try{
+    const m = await fetchMarket(ca);
+    if(!m.found){ out.className = 'msg err'; out.textContent = C.pitch.errChild(ca); return; }
+    const time = nowIso(), msg = L.buildMessage('attach', { pitchId: p.id, childCA: ca, wallet: wallet.addr, time });
+    if(!await confirmSign(C.pitch.s4, msg, 'Sign and attach')) return;
+    const sig = await signAction(msg);
+    const was = marketStatus(p);
+    p.child.ca = ca; p.child.market = { name: m.name, symbol: m.symbol }; p.market = { mc: m.mc, at: Date.now() }; p.attach = { time, sig };
+    savePitches(); post('/attach', { id: p.id, child: ca, wallet: wallet.addr, time, sig });
+    out.className = 'msg ok'; out.textContent = C.pitch.onAir(p.child.symbol ? '$' + p.child.symbol : m.symbol); toast(C.t.onair(p.child.name)); Sound.chime();
+    paintRundown(); drawCard($('#cardCv'), p, marketStatus(p));
+    if(marketStatus(p) === 'official' && was !== 'official') toast(C.t.official(p.child.name));
+  }catch(err){ out.className = 'msg err'; out.textContent = sigErr(err); }
+  finally{ $('#attachBtn').disabled = false; }
+});
+
+/* =====================================================================
+   SEATS
+   ===================================================================== */
+function seatMap(p){
+  const v = L.seatView(p.claims || [], 200);
+  const seats = v.shown.map(c => {
+    const mine = wallet && c.addr === wallet.addr, cls = c.vacated ? 'gone' : mine ? 'mine' : 'held';
+    const label = c.vacated ? C.seats.vacated : mine ? C.seats.mine : C.seats.tip(c.addr, fmtNum(c.balance), p.parent.symbol);
+    return `<button type="button" class="seat ${cls}" title="${esc(label)}" aria-label="${esc(label)}"></button>`;
+  }).join('');
+  return `<div class="seatmap" role="img" aria-label="Seat map, ${(p.claims || []).length} seats claimed in this browser">${seats}${v.more ? `<span class="seatcap">${C.seats.more(v.more)}</span>` : ''}</div>
+    <div class="seatcap">${C.seats.cap((p.claims || []).length)}</div>`;
+}
+function renderSeats(){
+  if(!$('#page-seats')) return;
+  $('#page-seats .label').textContent = 'Seats';
+  $('#seatsLede').textContent = C.seats.lede; $('#seatsRules').innerHTML = C.seats.rules.map(t => `<div><i>✓</i>${t}</div>`).join(''); $('#seatsFine').textContent = C.seats.fine;
+  const list = realPitches();
+  $('#seatList').innerHTML = list.length ? list.map(p => {
+    const st = marketStatus(p);
+    return `<article class="pitch" data-id="${esc(p.id)}"><div class="pitch__h"><div><a class="pitch__t" style="text-decoration:none;display:block" href="#/p/${esc(p.id)}">${esc(p.child.name)} <span style="color:var(--magenta)">$${esc(p.child.symbol)}</span></a>
+      <div class="pitch__m">${esc(C.seats.meta(p.child.name, p.parent.name))}</div></div><span class="badge ${st}">${esc(statusLabel(st))}</span></div>
+      ${seatMap(p)}
+      <div class="acts"><button class="btn btn--s btn--p" data-claim="${esc(p.id)}">${wallet ? C.seats.claim : C.seats.connect}</button><button class="btn btn--s" data-recheck="1">${C.seats.recheck}</button></div></article>`;
+  }).join('') : `<div class="empty"><b>${C.seats.empty[0]}</b><p>${C.seats.empty[1]}</p><a class="btn btn--p" href="#/pitch">${C.seats.empty[2]}</a></div>`;
+}
+const seatMsg = (t, cls = '') => { const m = $('#msgSeat'); m.className = 'msg ' + cls; m.textContent = t; };
+async function claimSeat(id){
+  const p = pitches.find(x => x.id === id); if(!p) return;
+  if(!wallet){ const w = await connect(); if(!w) return; }
+  if((p.claims || []).some(c => c.addr === wallet.addr && !c.vacated)){ seatMsg(C.seats.already); toast(C.seats.already); return; }
+  seatMsg(C.seats.checking);
+  try{
+    const bal = await tokenBalance(wallet.addr, p.parent.ca);
+    if(!(bal > 0)){ seatMsg(C.seats.notHolder(p.parent.symbol), 'err'); return; }
+    const time = nowIso(), msg = L.buildMessage('claim', { pitchId: p.id, parentName: p.parent.name, parentTicker: p.parent.symbol, parentCA: p.parent.ca, balance: String(bal), wallet: wallet.addr, time });
+    seatMsg('');
+    if(!await confirmSign(C.seats.signT, msg, C.seats.signBtn)) return;
+    const sig = await signAction(msg);
+    const claim = { addr: wallet.addr, balance: bal, ts: time, sig };
+    p.claims = (p.claims || []).filter(c => c.addr !== wallet.addr).concat(claim); savePitches(); post('/claims', { id: p.id, ...claim });
+    seatMsg(C.seats.ok(fmtNum(bal), p.parent.symbol), 'ok'); toast(C.seats.ok(fmtNum(bal), p.parent.symbol)); Sound.chime(); renderSeats();
+  }catch(err){ seatMsg(sigErr(err), 'err'); }
+}
+async function recheckSeats(){
+  if(!wallet){ const w = await connect(); if(!w) return; }
+  seatMsg(C.seats.checking); let vac = 0;
+  try{
+    for(const p of pitches) for(const c of (p.claims || [])) if(c.addr === wallet.addr){
+      const b = await tokenBalance(wallet.addr, p.parent.ca); c.vacated = !(b > 0); if(c.vacated) vac++;
+    }
+    savePitches(); seatMsg(C.seats.rc(vac), 'ok'); toast(C.seats.rc(vac)); renderSeats();
+  }catch(err){ seatMsg(err.message || C.err.bal, 'err'); }
+}
+$('#seatList').addEventListener('click', e => {
+  const c = e.target.closest('[data-claim]'); if(c){ claimSeat(c.dataset.claim); return; }
+  if(e.target.closest('[data-recheck]')) recheckSeats();
+});
+
+/* =====================================================================
+   GUIDE
+   ===================================================================== */
+let guideTab = 'all';
+const SAMPLES = () => [
+  [['Pepe', 'PEPE'], 1], [['Sui', 'SUI'], 2], [['Peanut', 'PNUT'], 3]
+].map(([p, seed], i) => { const r = L.showrunner({ name: p[0], symbol: p[1], ageDays: 0 }, seed, CFG.pitchPremiseMax);
+  return { id: 'example-' + (i + 1), sample: true, sampleStatus: 'pilot', parent: { ca: '', name: p[0], symbol: p[1] }, child: { name: r.name, symbol: r.ticker },
+    premise: r.premise, proposer: '—', time: new Date(Date.UTC(2026, 0, 1 + i)).toISOString(), sig: '', claims: [], market: null }; });
+function renderGuide(){
+  $('#page-guide .label').textContent = 'Guide';
+  $('#guideLede').textContent = C.guide.lede;
+  const real = realPitches(), counts = [real.length, real.filter(p => marketStatus(p) === 'onair').length, real.filter(p => marketStatus(p) === 'official').length];
+  $('#guideStats').innerHTML = counts.map((n, i) => `<div class="stat"><b>${n}</b><span>${C.guide.stats[i]} ${C.guide.inBrowser}</span></div>`).join('');
+  $('#guideTabs').innerHTML = C.guide.tabs.map(([k, t]) => `<button class="tab ${guideTab === k ? 'on' : ''}" role="tab" aria-selected="${guideTab === k}" data-t="${k}">${t}</button>`).join('');
+  const rows = allPitches().filter(p => guideTab === 'all' || marketStatus(p) === guideTab);
+  if(!rows.length){
+    $('#guideBody').innerHTML = guideTab === 'all' ? `<div class="empty"><b>${C.guide.emptyAll[0]}</b><p>${C.guide.emptyAll[1]}</p><a class="btn btn--p" href="#/pitch">${C.guide.emptyAll[2]}</a></div>` : `<div class="empty"><p style="margin:0">${C.guide.emptyTab}</p></div>`;
+  } else {
+    $('#guideBody').innerHTML = `<div class="tablewrap"><table class="guide"><thead><tr>${C.guide.th.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${rows.map((p, i) => {
+      const st = marketStatus(p);
+      return `<tr tabindex="0" data-open="${esc(p.id)}"><td class="chn">${String(10 + i).padStart(2, '0')}</td>
+        <td class="show"><b>${esc(p.child.name)}</b><span>$${esc(p.child.symbol)}</span></td>
+        <td><span class="badge ${st}">${esc(statusLabel(st))}</span></td>
+        <td>${esc(p.parent.name)} <span class="dim mono">$${esc(p.parent.symbol)}</span></td>
+        <td class="mono">${p.market && p.market.mc ? fmtUsd(p.market.mc) : C.guide.none}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+  }
+  $('#guideBtns').innerHTML = `<button class="btn btn--s" id="gRefresh">${C.guide.refresh}</button>${samples.length ? `<button class="btn btn--s" id="gRemove">${C.guide.remove}</button>` : `<button class="btn btn--s" id="gLoad">${C.guide.load}</button>`}`;
+  $('#verH').textContent = C.guide.verT; $('#verLede').textContent = C.guide.verLede; $('#dropT').textContent = C.guide.drop; $('#verFoot').textContent = C.guide.vFoot;
+}
+async function refreshMarkets(silent){
+  let n = 0;
+  for(const p of pitches.filter(x => x.child && x.child.ca)){
+    try{
+      const was = marketStatus(p), m = await fetchMarket(p.child.ca);
+      if(m.found){ p.market = { mc: m.mc, at: Date.now() }; n++; }
+      const now = marketStatus(p);
+      if(now !== was) toast(now === 'official' ? C.t.official(p.child.name) : now === 'onair' && was === 'official' ? C.t.back(p.child.name) : C.t.onair(p.child.name));
+    }catch(e){ if(!silent) toast(C.err.market); }
+  }
+  savePitches(); renderGuide(); if(currentRoute() === 'p') renderDetail();
+}
+$('#page-guide').addEventListener('click', e => {
+  const t = e.target.closest('[data-t]'); if(t){ guideTab = t.dataset.t; renderGuide(); return; }
+  if(e.target.closest('#gRefresh')){ refreshMarkets(false); return; }
+  if(e.target.closest('#gLoad')){ samples = SAMPLES(); store.set('spinoff-samples', samples); toast(C.t.samplesOn); renderGuide(); return; }
+  if(e.target.closest('#gRemove')){ samples = []; store.set('spinoff-samples', samples); toast(C.t.samplesOff); renderGuide(); return; }
+  const r = e.target.closest('[data-open]'); if(r){ r.classList.add('glitch'); location.hash = '#/p/' + r.dataset.open; }
+});
+$('#page-guide').addEventListener('keydown', e => { const r = e.target.closest?.('[data-open]'); if(r && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); location.hash = '#/p/' + r.dataset.open; } });
+$('#page-guide').addEventListener('mouseover', e => { const r = e.target.closest?.('tbody tr'); if(r && FX && !r.classList.contains('glitch')){ r.classList.add('glitch'); setTimeout(() => r.classList.remove('glitch'), 260); } });
+/* verify a proof file */
+async function verifyFile(file){
+  const res = $('#verRes'); res.className = 'vres'; res.textContent = '';
+  let j; try{ j = JSON.parse(await file.text()); }catch(e){ res.className = 'vres no'; res.textContent = C.guide.vBad; return; }
+  if(!j || j.spinoff !== 'proof' || typeof j.message !== 'string' || !String(j.message).startsWith('SPINOFF') || !L.isCA(j.wallet) || typeof j.signature !== 'string' || j.message.length > 2000){ res.className = 'vres no'; res.textContent = C.guide.vBad; return; }
+  if(!j.message.includes('Wallet: ' + j.wallet)){ res.className = 'vres no'; res.textContent = C.guide.vNo; return; }
+  const v = await L.verifySignature(j.message, j.signature, j.wallet);
+  res.className = 'vres ' + (v === 'valid' ? 'ok' : 'no');
+  res.textContent = v === 'valid' ? C.guide.vOk(j.wallet) : v === 'unsupported' ? C.guide.vUns : C.guide.vNo;
+}
+{
+  const drop = $('#drop'), inp = $('#verFile');
+  inp.addEventListener('change', () => { if(inp.files[0]) verifyFile(inp.files[0]); inp.value = ''; });
+  drop.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); inp.click(); } });
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if(f) verifyFile(f); });
+}
+
+/* =====================================================================
+   PITCH DETAIL  (#/p/<id> or #/p/<encoded pitch>)
+   ===================================================================== */
+let detailTok = 0;
+let artFilter = store.get('spinoff-art-filter', 'original');
+if(!['original', 'dark', 'glitchy'].includes(artFilter)) artFilter = 'original';
+/** The parent's original logo, read live from DexScreener (by address for real pitches, by symbol for the examples). */
+async function artUrl(p){
+  if(p.parentImg) return httpsOnly(p.parentImg);
+  if(p.parent.ca){ const m = await fetchMarket(p.parent.ca); return m.found ? m.img : ''; }
+  const r = await fetch('https://api.dexscreener.com/latest/dex/search?q=' + encodeURIComponent(p.parent.symbol));
+  if(!r.ok) return '';
+  const hits = ((await r.json()).pairs || []).filter(x => x.chainId === 'solana' && String(x.baseToken?.symbol).toUpperCase() === p.parent.symbol.toUpperCase() && x.info?.imageUrl);
+  hits.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
+  return hits.length ? httpsOnly(hits[0].info.imageUrl) : '';
+}
+async function loadArt(p, tok){
+  let url = ''; try{ url = await artUrl(p); }catch(e){}
+  if(tok !== detailTok || !$('#artBox')) return;
+  if(!url){ $('#artMsg').textContent = C.detail.artNone; $('#artTabs').hidden = true; return; }
+  const box = $('#artBox'), src = esc(url);
+  box.innerHTML = `<img class="l1" src="${src}" alt="${esc(p.parent.name)}" referrerpolicy="no-referrer"><img class="l2" src="${src}" alt="" aria-hidden="true" referrerpolicy="no-referrer"><img class="l3" src="${src}" alt="" aria-hidden="true" referrerpolicy="no-referrer">`;
+  box.hidden = false;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-art]'); if(!b) return;
+  artFilter = b.dataset.art; store.set('spinoff-art-filter', artFilter);
+  $$('#artTabs .tab').forEach(t => { const on = t.dataset.art === artFilter; t.classList.toggle('on', on); t.setAttribute('aria-pressed', on); });
+  const box = $('#artBox'); box.className = 'art art--' + artFilter;
+  if(FX && artFilter === 'glitchy'){ box.classList.add('burst'); setTimeout(() => box.classList.remove('burst'), 300); }
+});
+async function renderDetail(){
+  const tok = ++detailTok, seg = decodeURIComponent(location.hash.split('/')[2] || '');
+  $('#backLink').textContent = C.chrome.back;
+  const box = $('#pBody');
+  let p = allPitches().find(x => x.id === seg), shared = false;
+  if(!p && seg){
+    try{ const d = L.decodePitch(seg); const local = pitches.find(x => x.sig === d.sig); if(local) p = local; else { p = { ...d, id: L.pitchIdFromSig(d.sig), claims: [], market: null, createdAt: Date.parse(d.time) }; shared = true; } }
+    catch(e){ box.innerHTML = `<div class="empty"><b>${C.detail.notFound[0]}</b><p>${seg.length > 30 ? C.detail.damaged : C.detail.notFound[1]}</p><a class="btn btn--p" href="#/guide">${C.chrome.back}</a></div>`; return; }
+  }
+  if(!p){ box.innerHTML = `<div class="empty"><b>${C.detail.notFound[0]}</b><p>${C.detail.notFound[1]}</p><a class="btn btn--p" href="#/guide">${C.chrome.back}</a></div>`; return; }
+  const st = marketStatus(p), order = ['pilot', 'onair', 'official'];
+  const ladder = order.map(k => `<span class="badge ${k} ${k === st ? 'cur' : ''}">${esc(statusLabel(k))}</span>`).join('');
+  const read = p.market && p.market.at ? `<p class="fine">${esc(C.status.read(new Date(p.market.at).toLocaleTimeString()))}</p>` : '';
+  box.innerHTML = `${shared ? `<div class="banner"><span>${C.detail.banner}</span><button class="btn btn--s" id="dSave">${C.detail.save}</button></div>` : ''}
+    <span class="label">Pitch</span>
+    <h2 class="h" style="font-size:clamp(34px,7vw,64px)"><span>${esc(p.child.name)}</span><span class="acc">$${esc(p.child.symbol)}</span></h2>
+    <div class="ladder">${ladder}</div>
+    <p class="lede" style="margin-bottom:10px">${esc(C.status.explain())}</p>${read}
+    <section class="bz" style="margin-top:18px"><dl class="dl">
+      <dt>${C.detail.f[0]}</dt><dd>${esc(p.parent.name)} ($${esc(p.parent.symbol)}) <span class="mono dim">${esc(p.parent.ca)}</span> <span id="dPar" class="dim"></span></dd>
+      <dt>${C.detail.f[1]}</dt><dd>${esc(p.child.name)} ($${esc(p.child.symbol)})${p.child.ca ? ` <span class="mono dim">${esc(p.child.ca)}</span>` : ''}</dd>
+      <dt>${C.detail.f[2]}</dt><dd>${esc(p.premise)}</dd>
+      <dt>${C.detail.f[3]}</dt><dd class="mono">${esc(p.proposer)}</dd>
+      <dt>${C.detail.f[4]}</dt><dd>${esc(p.time)}</dd>
+      <dt>${C.detail.f[5]}</dt><dd class="fp" id="dFp">…</dd>
+      <dt>${C.detail.f[6]}</dt><dd><span class="badge ${st}">${esc(statusLabel(st))}</span></dd></dl>
+      <p class="vres" id="dVer" role="status"></p></section>
+    ${p.sample ? '' : `<section class="bz"><canvas id="dCard" width="1200" height="630" style="width:100%;height:auto;border-radius:14px;display:block"></canvas><div class="acts" id="dActs"></div></section>`}
+    <section class="bz" id="artSec"><h3>${C.detail.artT}</h3><div class="tabs" id="artTabs">${C.detail.artF.map(([k, t]) => `<button class="tab ${artFilter === k ? 'on' : ''}" data-art="${k}" aria-pressed="${artFilter === k}">${t}</button>`).join('')}</div>
+      <div class="art art--${artFilter}" id="artBox" hidden></div><p class="msg" id="artMsg"></p></section>
+    <section class="bz"><h3>${C.detail.seatsT}</h3>${seatMap(p)}</section>`;
+  loadArt(p, tok);
+  if(!p.sample){ await (document.fonts?.ready || Promise.resolve()); if(tok !== detailTok) return; try{ p.fp = p.fp || await fpOf(p); }catch(e){ p.fp = ''; } $('#dFp').textContent = p.fp || '—'; drawCard($('#dCard'), p, st); renderCardActions($('#dActs'), p); }
+  else $('#dFp').textContent = '—';
+  const sv = $('#dSave'); if(sv) sv.onclick = () => { if(pitches.some(x => x.sig === p.sig)) return; pitches.unshift(p); savePitches(); paintCounter(); toast(C.t.saved); location.hash = '#/p/' + p.id; };
+  if(!p.sample){
+    const msg = L.pitchMessage(p), v = await L.verifySignature(msg, p.sig, p.proposer); if(tok !== detailTok) return;
+    const el = $('#dVer'); el.className = 'vres ' + (v === 'valid' ? 'ok' : 'no');
+    el.textContent = v === 'valid' ? C.guide.vOk(p.proposer) : v === 'unsupported' ? C.guide.vUns : C.guide.vNo;
+    // live read of the parent
+    try{ const m = await fetchMarket(p.parent.ca); if(tok !== detailTok) return; if(m.found) $('#dPar').textContent = `· ${fmtUsd(m.mc)} ${C.pitch.mcap.toLowerCase()}, ${C.status.read(new Date().toLocaleTimeString())}`; }catch(e){}
+  }
+}
+
+/* =====================================================================
+   HOW + FOOTER + HEADINGS
+   ===================================================================== */
+function renderHow(){
+  $('#page-how .label').textContent = 'How it works';
+  $('#howLede').textContent = C.how.lede;
+  $('#howSteps').innerHTML = C.how.eps().map(([n, t, d]) => `<div class="step"><div class="step__n">${n}</div><div class="step__t">${esc(t)}</div><p class="step__d">${esc(d)}</p></div>`).join('');
+  $('#howFine').innerHTML = C.how.fine.map(([t, d]) => `<div><b>${esc(t)}</b>${esc(d)}</div>`).join('');
+  $('#howExplain').textContent = C.status.explain(); $('#howRisk').innerHTML = C.how.risk;
+  const a = $('#howAnim'); a.setAttribute('aria-label', C.how.alt);
+  if(!a.firstChild) a.innerHTML = `<svg viewBox="0 0 400 220" aria-hidden="true" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#EDEBE6"><path d="M105 62 L85 34 M105 62 L128 34"/><rect x="40" y="62" width="130" height="100" rx="22" fill="#07080C"/>
+      <rect x="54" y="76" width="102" height="72" rx="12" stroke-width="3" fill="#0E1118"/></g>
+    <g><g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;190 6;190 6;0 0" keyTimes="0;.12;.5;.9;1" dur="5s" repeatCount="indefinite"/>
+      <rect x="40" y="62" width="130" height="100" rx="22" stroke="#FF2BD6" opacity="0"><animate attributeName="opacity" values="0;0;.9;.9;0" keyTimes="0;.12;.2;.9;1" dur="5s" repeatCount="indefinite"/></rect></g>
+      <rect x="28" y="62" width="130" height="100" rx="22" stroke="#19F0FF" opacity="0"><animate attributeName="opacity" values="0;0;.8;0;0" keyTimes="0;.1;.2;.45;1" dur="5s" repeatCount="indefinite"/></rect></g>
+    <g stroke="#EDEBE6" transform="translate(190 6)" opacity=".35"><animate attributeName="opacity" values=".25;.25;.25;1;1;.25" keyTimes="0;.45;.5;.62;.9;1" dur="5s" repeatCount="indefinite"/>
+      <path d="M105 62 L90 40 M105 62 L122 40"/><rect x="40" y="62" width="130" height="100" rx="22" fill="#07080C"/><rect x="54" y="76" width="102" height="72" rx="12" stroke-width="3" fill="#FFB000" fill-opacity="0"><animate attributeName="fill-opacity" values="0;0;0;.9;.9;0" keyTimes="0;.5;.55;.65;.9;1" dur="5s" repeatCount="indefinite"/></rect></g></svg>`;
+  const svg = a.querySelector('svg'); if(svg){ try{ FX ? svg.unpauseAnimations() : svg.pauseAnimations(); }catch(e){} }
+}
+function footHtml(){
+  const links = C.foot.nav.map(([r, t]) => `<a href="#/${r}">${t}</a>`).join('') +
+    (CFG.x ? `<a href="${esc(CFG.x)}" target="_blank" rel="noopener">X</a>` : '') + (CFG.telegram ? `<a href="${esc(CFG.telegram)}" target="_blank" rel="noopener">Telegram</a>` : '') +
+    (CFG.repo ? `<a href="${esc(CFG.repo)}" target="_blank" rel="noopener">Repo</a>` : '') + `<a href="#/">${C.foot.room}</a>`;
+  return `<footer class="foot"><i class="bars"></i><nav aria-label="Footer">${links}</nav><div class="tag2">${C.foot.tag}</div>${CFG.tokenCA ? `<p class="ca">${esc(C.foot.ca(CFG.tokenCA))}</p>` : ''}<p class="risk2">${esc(C.foot.risk)}</p></footer>`;
+}
+let io = null;
+function observeHeads(root){
+  if(!FX || !('IntersectionObserver' in window)) return;
+  io = io || new IntersectionObserver(es => es.forEach(en => { if(en.isIntersecting){ en.target.classList.add('burst'); io.unobserve(en.target); setTimeout(() => en.target.classList.remove('burst'), 400); } }), { threshold: .5 });
+  root.querySelectorAll('.h').forEach(h => { if(!h.dataset.seen){ h.dataset.seen = '1'; io.observe(h); } });
+}
+
+/* =====================================================================
+   ROOM (three.js): a living room at 2 a.m., lit by two CRT TVs
+   ===================================================================== */
+let roomPromise = null;
+const bootT0 = performance.now();
+let introSkip = false;
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => { introSkip = true; }, { once: true, capture: true }));
+function ensureRoom(){
+  if(roomPromise) return roomPromise;
+  roomPromise = buildRoom().catch(err => { console.warn('3D room unavailable:', err); noWebGL(); });
+  return roomPromise;
+}
+function noWebGL(){
+  document.body.classList.add('no3d', 'domkeys'); document.body.classList.remove('has3d', 'intro');
+  $('#fbLine').textContent = C.boot.noGl; finishBoot();
+}
+function finishBoot(){ const b = $('#boot'); if(b && !b.classList.contains('done')){ b.classList.add('done'); setTimeout(() => b.remove(), 700); } }
+const isNarrow = () => innerWidth < 760 || matchMedia('(pointer:coarse)').matches;
+
+async function buildRoom(){
+  const THREE = await import('three');
+  const mobile = isNarrow();
+  const canvas = $('#stage');
+  let renderer;
+  try{ renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobile, powerPreference: 'high-performance' }); }
+  catch(e){ throw new Error('webgl'); }
+  const { RoundedBoxGeometry } = await import('three/addons/geometries/RoundedBoxGeometry.js');
+  let composer = null, post = null;
+  if(!mobile){
+    try{
+      const [{ EffectComposer }, { RenderPass }, { ShaderPass }, { OutputPass }] = await Promise.all([
+        import('three/addons/postprocessing/EffectComposer.js'), import('three/addons/postprocessing/RenderPass.js'),
+        import('three/addons/postprocessing/ShaderPass.js'), import('three/addons/postprocessing/OutputPass.js')]);
+      post = { EffectComposer, RenderPass, ShaderPass, OutputPass };
+    }catch(e){ post = null; }
+  }
+  renderer.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.5 : 2));
+  document.body.classList.add('has3d', 'intro'); document.body.classList.toggle('domkeys', mobile);
+  try{ await Promise.race([Promise.all([document.fonts.load('40px Anton'), document.fonts.load('30px VT323'), document.fonts.load('30px "Space Grotesk"')]), sleep(1200)]); }catch(e){}
+
+  const VOID = new THREE.Color(0x07080C);
+  const scene = new THREE.Scene(); scene.background = VOID; scene.fog = new THREE.Fog(0x07080C, 13, 34);
+  const camera = new THREE.PerspectiveCamera(42, 1, .1, 80);
+
+  /* ---------- helpers ---------- */
+  const mat = (c, r = .55, m = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
+  const ctex = (w, h, draw, rep) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; if(rep){ t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); } return t; };
+  const glow = ctex(64, 64, (x) => { const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.4, 'rgba(255,255,255,.4)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); });
+  const add = (m, parent = scene) => { parent.add(m); return m; };
+
+  /* ---------- CRT glass shader ---------- */
+  function glassMat(tex){
+    return new THREE.ShaderMaterial({
+      uniforms: { uTex: { value: tex }, uTime: { value: 0 }, uChroma: { value: 0 }, uRoll: { value: 0 }, uTrackY: { value: .5 }, uTrack: { value: 0 },
+        uPower: { value: 1 }, uSnow: { value: 0 }, uGlitch: { value: 0 }, uBright: { value: 1 } },
+      vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader: `
+        uniform sampler2D uTex; uniform float uTime,uChroma,uRoll,uTrackY,uTrack,uPower,uSnow,uGlitch,uBright; varying vec2 vUv;
+        float h21(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
+        void main(){
+          vec2 c = vUv*2.-1.; float r2 = dot(c,c); vec2 uv = (c*(1.+.1*r2))*.5+.5;
+          if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.){ gl_FragColor = vec4(0.,0.,0.,1.); return; }
+          float y = fract(uv.y + uRoll);
+          float tm = exp(-pow((uv.y-uTrackY)/.045,2.));
+          float tr = tm*uTrack;
+          float jit = h21(vec2(floor(uv.y*140.), floor(uTime*18.)))-.5;
+          float dx = tr*(.05*sin(uv.y*90.+uTime*45.)+.03*jit) + uGlitch*.012*jit*step(.82,h21(vec2(floor(uv.y*40.),floor(uTime*12.))));
+          vec2 p = vec2(uv.x+dx, y);
+          float ch = uChroma + uGlitch*.012 + abs(tr)*.012 + .0012;
+          vec3 col = vec3(texture2D(uTex,p+vec2(ch,0.)).r, texture2D(uTex,p).g, texture2D(uTex,p-vec2(ch,0.)).b);
+          float n = h21(uv*vec2(340.,260.)+fract(uTime)*91.);
+          col = mix(col, vec3(n), clamp(uSnow*.85+abs(tr)*.45,0.,1.));
+          col *= .86 + .14*sin(uv.y*620.);
+          float bar = smoothstep(.0,.08,fract(uv.y+uRoll*1.0-.0))*.0;
+          col *= 1. - bar;
+          col *= 1. + (n-.5)*.10;
+          col *= smoothstep(1.05,.25,length(c)*.8);
+          // power-on aperture
+          float ap = mix(.004, 1., smoothstep(.12,1.,uPower));
+          float m = 1. - smoothstep(ap*.5, ap*.5+.012, abs(vUv.y-.5));
+          float flash = (1.-smoothstep(0.,.35,uPower))*step(.001,uPower);
+          col = mix(col, vec3(1.), flash*.9);
+          gl_FragColor = vec4(col*uBright*m*step(.001,uPower), 1.);
+          #include <colorspace_fragment>
+        }`
+    });
+  }
+
+  /* ---------- room shell ---------- */
+  const wall = add(new THREE.Mesh(new THREE.PlaneGeometry(60, 14), new THREE.MeshStandardMaterial({
+    map: ctex(256, 256, (x, w, h) => { x.fillStyle = '#0a1317'; x.fillRect(0, 0, w, h); x.strokeStyle = '#102028'; x.lineWidth = 2; for(let i = -4; i < 8; i++){ x.beginPath(); x.moveTo(i*32, 0); x.lineTo(i*32 + 256, 256); x.moveTo(i*32 + 256, 0); x.lineTo(i*32, 256); x.stroke(); } }, [14, 4]), roughness: 1 })));
+  wall.position.set(0, 6, -3.4);
+  const floor = add(new THREE.Mesh(new THREE.PlaneGeometry(60, 40), new THREE.MeshStandardMaterial({
+    map: ctex(256, 256, (x, w, h) => { x.fillStyle = '#0b0c13'; x.fillRect(0, 0, w, h); for(let i = 0; i < 2600; i++){ x.fillStyle = `rgba(${40 + Math.random()*40|0},${40 + Math.random()*30|0},${60 + Math.random()*40|0},.12)`; x.fillRect(Math.random()*w, Math.random()*h, 2, 2); } }, [14, 10]), roughness: 1 })));
+  floor.rotation.x = -Math.PI/2;
+  const floorGlow = add(new THREE.Mesh(new THREE.PlaneGeometry(14, 9), new THREE.MeshBasicMaterial({ map: glow, color: 0x19F0FF, transparent: true, opacity: .22, blending: THREE.AdditiveBlending, depthWrite: false })));
+  floorGlow.rotation.x = -Math.PI/2; floorGlow.position.set(-.8, .02, 2.2);
+
+  /* ---------- TV factory ---------- */
+  const plastic = mat(0x14161c, .55), trim = mat(0xd9d5cb, .6), dark = mat(0x050609, .8);
+  const pickables = [];
+  function makeTV(kind, tex){
+    const w = 4.2, h = 3.3, d = 2.6, sw = 2.7, sh = 2.05, sx = -.5;
+    const g = new THREE.Group();
+    const hit = (m, k) => { m.userData.kind = k || kind; pickables.push(m); return m; };
+    hit(add(new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 4, .2), plastic), g));
+    const plate = hit(add(new THREE.Mesh(new RoundedBoxGeometry(w + .08, h + .08, .3, 4, .14), trim), g)); plate.position.z = d/2 - .08;
+    const rec = add(new THREE.Mesh(new RoundedBoxGeometry(sw + .34, sh + .34, .08, 3, .12), dark), g); rec.position.set(sx, 0, d/2 + .1);
+    const geo = new THREE.PlaneGeometry(sw, sh, 28, 20), pos = geo.attributes.position;
+    for(let i = 0; i < pos.count; i++){ const x = pos.getX(i)/(sw/2), y = pos.getY(i)/(sh/2); pos.setZ(i, .14*(1 - .55*(x*x + y*y)/2)); }
+    geo.computeVertexNormals();
+    const gm = glassMat(tex), screen = hit(add(new THREE.Mesh(geo, gm), g), kind === 'tv' ? 'screen' : 'child');
+    screen.position.set(sx, 0, d/2 + .15);
+    // controls
+    const cx = w/2 - .62;
+    for(let i = 0; i < 8; i++){ const s = add(new THREE.Mesh(new THREE.BoxGeometry(.9, .045, .06), dark), g); s.position.set(cx, -.15 - i*.14, d/2 + .08); }
+    const knob = hit(add(new THREE.Mesh(new THREE.CylinderGeometry(.24, .26, .16, 24), mat(0x2a2d36, .4, .3)), g)); knob.rotation.x = Math.PI/2; knob.position.set(cx, .85, d/2 + .14);
+    const notch = add(new THREE.Mesh(new THREE.BoxGeometry(.04, .2, .02), trim), knob); notch.position.set(0, .0, .09); notch.rotation.x = Math.PI/2; notch.position.set(0, .09, 0); notch.scale.set(1, 1, 1);
+    const led = add(new THREE.Mesh(new THREE.SphereGeometry(.055, 12, 10), new THREE.MeshBasicMaterial({ color: 0x7a1d18 })), g); led.position.set(cx - .35, .38, d/2 + .12);
+    // feet
+    [[-1.6, 1], [1.6, 1], [-1.6, -1], [1.6, -1]].forEach(([fx, fz]) => { const f = add(new THREE.Mesh(new THREE.CylinderGeometry(.11, .14, .1, 12), plastic), g); f.position.set(fx, -h/2 - .04, fz*.8); });
+    // antenna
+    const ant = new THREE.Group(); ant.position.set(-.3, h/2 + .02, -.2); g.add(ant);
+    const base = add(new THREE.Mesh(new THREE.SphereGeometry(.28, 16, 8, 0, Math.PI*2, 0, Math.PI/2), mat(0x20232b, .5)), ant);
+    const ears = [-1, 1].map(s => {
+      const pv = new THREE.Group(); ant.add(pv); pv.userData.s = s;
+      const rod = hit(add(new THREE.Mesh(new THREE.CylinderGeometry(.028, .028, 1.9, 8), mat(0xcfcdc6, .3, .8)), pv), kind === 'tv' ? 'antenna' : 'child'); rod.position.y = .95;
+      const tip = hit(add(new THREE.Mesh(new THREE.SphereGeometry(.09, 12, 10), mat(0xcfcdc6, .3, .8)), pv), kind === 'tv' ? 'antenna' : 'child'); tip.position.y = 1.92;
+      return pv;
+    });
+    return { g, screen, gm, knob, led, ears, ant, w, h, d };
+  }
+
+  /* ---------- screen canvases ---------- */
+  const scrCv = document.createElement('canvas'); scrCv.width = 512; scrCv.height = 384;
+  const scrX = scrCv.getContext('2d'), scrTex = new THREE.CanvasTexture(scrCv); scrTex.colorSpace = THREE.SRGBColorSpace;
+  const chCv = document.createElement('canvas'); chCv.width = 320; chCv.height = 240;
+  const chX = chCv.getContext('2d'), chTex = new THREE.CanvasTexture(chCv); chTex.colorSpace = THREE.SRGBColorSpace;
+
+  /* ---------- stand, parent TV, child TV on tapes ---------- */
+  const stand = add(new THREE.Mesh(new RoundedBoxGeometry(5.4, .56, 2.5, 3, .06), mat(0x1b1511, .7))); stand.position.set(-.8, .28, -1.5);
+  const P1 = makeTV('tv', scrTex); P1.g.position.set(-.8, .56 + P1.h/2 + .08, -1.6); scene.add(P1.g);
+  const tapes = new THREE.Group(); scene.add(tapes);
+  const tapeCols = [0x15171d, 0x1d1f27, 0x101217, 0x23252e, 0x14161c];
+  tapeCols.forEach((c, i) => { const t = add(new THREE.Mesh(new RoundedBoxGeometry(1.7, .17, 1.05, 2, .03), mat(c, .6)), tapes); t.position.set(3.1 + (i%2 ? .06 : -.05), .085 + i*.175, -1.1); t.rotation.y = (i - 2)*.05;
+    const lab = add(new THREE.Mesh(new THREE.PlaneGeometry(.9, .1), new THREE.MeshBasicMaterial({ color: i % 2 ? 0x8B90A3 : 0xEDEBE6 })), t); lab.position.set(0, 0, .535); });
+  const P2 = makeTV('child', chTex); P2.g.scale.setScalar(.5); P2.g.position.set(3.1, .88 + P2.h*.25 + .03, -1.1); scene.add(P2.g);
+  P2.gm.uniforms.uPower.value = 0;   // OFF at rest
+  P2.ears.forEach(e => { e.rotation.z = -e.userData.s*.5; });
+
+  /* ---------- coffee table + remote ---------- */
+  const TZ = 3.9, table = new THREE.Group(); scene.add(table);
+  const top = add(new THREE.Mesh(new RoundedBoxGeometry(5.6, .14, 1.9, 3, .05), mat(0x1b1511, .55)), table); top.position.y = .7;
+  [[-2.5, -.75], [2.5, -.75], [-2.5, .75], [2.5, .75]].forEach(([x, z]) => { const l = add(new THREE.Mesh(new THREE.BoxGeometry(.14, .66, .14), mat(0x120e0b, .8)), table); l.position.set(x, .33, z); });
+  table.position.set(-1.35, 0, TZ);
+  const mug = add(new THREE.Mesh(new THREE.CylinderGeometry(.17, .15, .3, 16), mat(0xEDEBE6, .5)), table); mug.position.set(-2.1, .92, .1);
+  const remote = new THREE.Group(); table.add(remote); remote.position.set(.1, .98, .12); remote.rotation.set(.4, .05, 0); remote.scale.setScalar(.945);   // propped up toward the camera so the labels read
+  add(new THREE.Mesh(new RoundedBoxGeometry(4.3, .34, 1.7, 3, .06), mat(0x2a1d16, .7)), remote).position.y = -.22;   // slab it rests on
+  // chunky 90s remote: shell, recessed key plate, printed brand strip, power button, IR window, rubber nubs
+  const shell = new THREE.MeshStandardMaterial({ color: 0xd8cfb8, emissive: 0x6b6450, emissiveIntensity: .75, roughness: .62 });
+  const plateM = new THREE.MeshStandardMaterial({ color: 0x8d856c, emissive: 0x3a3626, emissiveIntensity: .7, roughness: .85 }), inkM = mat(0x1c1a14, .9);
+  const tableLamp = new THREE.PointLight(0xfff0d8, 9, 7, 2); tableLamp.position.set(-1.2, 2.3, TZ + 1.6); scene.add(tableLamp);
+  add(new THREE.Mesh(new RoundedBoxGeometry(3.95, .22, 1.32, 4, .13), shell), remote).position.y = .02;
+  const plate = add(new THREE.Mesh(new RoundedBoxGeometry(3.55, .05, .98, 3, .05), plateM), remote); plate.position.set(.04, .135, .06);
+  const irw = add(new THREE.Mesh(new THREE.BoxGeometry(.1, .12, .62), new THREE.MeshPhysicalMaterial({ color: 0x4a0b0f, roughness: .15, clearcoat: 1 })), remote); irw.position.set(-1.98, .03, 0);
+  const brand = add(new THREE.Mesh(new THREE.PlaneGeometry(1.5, .2), new THREE.MeshBasicMaterial({ transparent: true, map: ctex(384, 52, (x, w, h) => { x.fillStyle = 'rgba(40,34,20,.75)'; x.font = '34px Anton, Impact, sans-serif'; x.textBaseline = 'middle'; x.textAlign = 'center'; x.fillText('S P I N O F F   T V', w/2, h/2 + 2); }) })), remote);
+  brand.rotation.x = -Math.PI/2; brand.position.set(.65, .136, -.54);
+  const pw = add(new THREE.Mesh(new THREE.CylinderGeometry(.14, .15, .09, 20), new THREE.MeshPhysicalMaterial({ color: 0xd8342a, roughness: .35, clearcoat: .8 })), remote); pw.position.set(-1.62, .17, -.5);
+  const pdome = add(new THREE.Mesh(new THREE.SphereGeometry(.14, 16, 8, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshPhysicalMaterial({ color: 0xd8342a, roughness: .3, clearcoat: .9 })), remote); pdome.scale.y = .4; pdome.position.set(-1.62, .215, -.5);
+  for(let i = 0; i < 9; i++){ const n = add(new THREE.Mesh(new THREE.CylinderGeometry(.075, .08, .045, 12), mat(0x3a372e, .8)), remote); n.position.set(-1.2 + i*.34, .15, .58); n.scale.z = .75; }
+  const keyDefs = visibleKeys(), keyMeshes = [];
+  keyDefs.forEach((k, i) => {
+    const sp = Math.min(.82, 3.4/keyDefs.length), ks = Math.min(1, sp/.9), kx = (i - (keyDefs.length - 1)/2)*sp + .08;
+    const well = add(new THREE.Mesh(new THREE.CylinderGeometry(.43, .45, .05, 32), inkM), remote); well.position.set(kx, .15, .06); well.scale.set(ks, 1, ks);
+    const ring = add(new THREE.Mesh(new THREE.TorusGeometry(.43, .022, 8, 36), mat(0xe6dfcb, .5)), remote); ring.rotation.x = Math.PI/2; ring.position.set(kx, .178, .06); ring.scale.set(ks, ks, 1);
+    const grp = new THREE.Group(); grp.position.set(kx, .16, .06); grp.scale.set(ks, 1, ks); remote.add(grp);
+    const rubber = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(k.col), emissive: new THREE.Color(k.col), emissiveIntensity: .42, roughness: .5, clearcoat: .35, clearcoatRoughness: .45 });
+    const cap = add(new THREE.Mesh(new THREE.CylinderGeometry(.37, .39, .1, 32), rubber), grp); cap.position.y = .03;
+    const dome = add(new THREE.Mesh(new THREE.SphereGeometry(.37, 32, 12, 0, Math.PI*2, 0, Math.PI/2), rubber), grp); dome.scale.y = .32; dome.position.y = .08;
+    cap.userData = dome.userData = { kind: 'key', go: k.go, grp }; if(!mobile){ pickables.push(cap); pickables.push(dome); }
+    const lab = add(new THREE.Mesh(new THREE.PlaneGeometry(.62, .62), new THREE.MeshBasicMaterial({ transparent: true, map: ctex(160, 160, (x, w, h) => {
+      x.font = `${k.label.length > 4 ? 46 : 60}px Anton, Impact, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillStyle = 'rgba(255,255,255,.55)'; x.fillText(k.label, w/2 + 1.5, h/2 + 3.5); x.fillStyle = '#17130f'; x.fillText(k.label, w/2, h/2 + 1); }) })), grp);
+    lab.rotation.x = -Math.PI/2; lab.position.y = .08 + .32*.37 + .004;
+    keyMeshes.push({ go: k.go, grp, y: 0, v: 0, target: 0, cap });
+  });
+  remote.visible = !mobile;   // touch / narrow screens use the DOM keys instead
+  const ir = add(new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, 1, 6), new THREE.MeshBasicMaterial({ color: 0xff2bd6, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })));
+  const irFlash = add(new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: 0xff2bd6, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })));
+  irFlash.scale.set(.6, .6, 1);
+
+  /* ---------- light: cone, point light, dust ---------- */
+  const lamp = new THREE.PointLight(0x9fdcff, 24, 15, 2); lamp.position.set(-.5, 2.3, 1.4); scene.add(lamp);
+  const lamp2 = new THREE.PointLight(0xff2bd6, 4, 9, 2); lamp2.position.set(3.1, 1.5, .6); scene.add(lamp2);
+  scene.add(new THREE.HemisphereLight(0x1b2a3a, 0x0a0a10, .9));
+  const coneMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    uniforms: { uCol: { value: new THREE.Color(0x9fdcff) }, uA: { value: .16 } },
+    vertexShader: 'varying vec2 vUv;varying vec3 vN;varying vec3 vV;void main(){vUv=uv;vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+    fragmentShader: 'uniform vec3 uCol;uniform float uA;varying vec2 vUv;varying vec3 vN;varying vec3 vV;void main(){float f=pow(abs(dot(normalize(vN),normalize(vV))),1.6);float a=pow(vUv.y,1.7)*f*uA;gl_FragColor=vec4(uCol*a,a);}' });
+  const cone = add(new THREE.Mesh(new THREE.CylinderGeometry(1.5, 3.4, 5, 28, 1, true), coneMat)); cone.rotation.x = -Math.PI/2; cone.position.set(-.8, P1.g.position.y, -.4 + 2.5);
+  const NDUST = mobile ? 70 : 160, dpos = new Float32Array(NDUST*3), dvel = [];
+  for(let i = 0; i < NDUST; i++){ dpos[i*3] = -5 + Math.random()*11; dpos[i*3+1] = .3 + Math.random()*4.5; dpos[i*3+2] = -2 + Math.random()*7; dvel.push([(Math.random() - .5)*.05, .02 + Math.random()*.05, (Math.random() - .5)*.05]); }
+  const dgeo = new THREE.BufferGeometry(); dgeo.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
+  const dust = add(new THREE.Points(dgeo, new THREE.PointsMaterial({ size: .09, map: glow, color: 0xbfe9ff, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })));
+
+  /* ---------- post pass (desktop) ---------- */
+  const postU = { uGlitch: { value: 0 }, uTime: { value: 0 } };
+  if(post){
+    composer = new post.EffectComposer(renderer);
+    composer.addPass(new post.RenderPass(scene, camera));
+    composer.addPass(new post.ShaderPass({ uniforms: { tDiffuse: { value: null }, ...postU },
+      vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader: `uniform sampler2D tDiffuse;uniform float uGlitch,uTime;varying vec2 vUv;
+        float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+        void main(){ vec2 uv=vUv; float g=uGlitch;
+          uv.x += (h(vec2(floor(uv.y*70.),floor(uTime*14.)))-.5)*.03*g*step(.86,h(vec2(floor(uv.y*30.),floor(uTime*9.))));
+          float s=.0007+g*.009; vec3 c=vec3(texture2D(tDiffuse,uv+vec2(s,0.)).r,texture2D(tDiffuse,uv).g,texture2D(tDiffuse,uv-vec2(s,0.)).b);
+          c*=1.-.03*(1.+g)*(.5+.5*sin(uv.y*900.)); c+=(h(uv*vec2(900.,500.)+uTime)-.5)*(.012+.05*g);
+          c*=smoothstep(1.15,.35,length(uv-.5)*1.25); gl_FragColor=vec4(c,1.); }` }));
+    composer.addPass(new post.OutputPass());
+  }
+
+  /* ---------- state ---------- */
+  const HOME = { pos: new THREE.Vector3(-1.7, 1.95, 9.2), look: new THREE.Vector3(-1.3, 1.8, 0), fov: 42 };
+  const CLOSE = { pos: new THREE.Vector3(-.9, 2.45, 4.2), look: new THREE.Vector3(-.8, 2.4, -1.4), fov: 34 };
+  const cam = { pos: CLOSE.pos.clone(), look: CLOSE.look.clone(), fov: CLOSE.fov, tgt: CLOSE, ease: .02 };   // starts close on the screen; powerOn() pulls it out
+  let scr = { mode: 'idle', t0: 0, osd: '', osdT0: 0, tint: [255, 255, 255], saver: { x: 80, y: 60, vx: 90, vy: 70, c: 0 } };
+  let child = { mode: 'off', t0: 0 };
+  let glitch = 0, shake = 0, chroma = 0, roll = 0, rollT = -1, track = 0, trackV = 0, trackTarget = 0, trackY = .5, dragging = false;
+  let snow = 0, snowT = 0, antAngle = 0, antV = 0, antDrag = null, antRest = 0, lockedPing = true;
+  let hoverGo = null, hoverKind = null, last = performance.now(), idleT = performance.now(), saver = false, scrAcc = 0;
+  const ptr = { x: 0, y: 0, nx: 0, ny: 0, speed: 0, lx: 0, ly: 0 };
+  let power = 0, powerTarget = 1, ready = false;
+  const sweet = 0;
+
+  function sizeAll(){
+    const w = innerWidth, h = innerHeight, a = w/h;
+    renderer.setSize(w, h, false); composer && composer.setSize(w, h);
+    camera.aspect = a; camera.updateProjectionMatrix();
+    if(a >= 1.4){ HOME.fov = 42; HOME.pos.set(-1.7, 1.95, 9.2); HOME.look.set(-1.3, 1.8, 0); }
+    else {
+      // portrait / squarish: widen the lens and back off until the whole shelf (remote .. child TV) fits
+      HOME.fov = a < 1 ? 56 : 48;
+      const d = Math.max(9.8, 8.6/(2*Math.tan(HOME.fov*Math.PI/360)*a));
+      HOME.pos.set(.95, 1.9 + (d - 9.8)*.04, d - 1.6); HOME.look.set(.95, 1.45, 0);
+    }
+    cam.tgt === HOME && (cam.fov = HOME.fov);
+    CLOSE.pos.z = 4.2*Math.min(HOME.pos.z/9.2, 1.4);
+  }
+  addEventListener('resize', sizeAll); sizeAll();
+
+  /* ---------- screen drawing ---------- */
+  function drawScreen(now){
+    const w = scrCv.width, h = scrCv.height, x = scrX;
+    if(scr.mode === 'idle') drawBarsPic(x, w, h, 'STAND BY', 'PICK A CHANNEL');
+    else if(scr.mode === 'static'){ drawNoise(x, w, h, scr.tint); }
+    else if(scr.mode === 'saver'){
+      const s = scr.saver, dt = .06;
+      x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
+      x.font = '70px Anton, Impact, sans-serif'; x.textBaseline = 'top'; x.textAlign = 'left'; const tw = x.measureText('SPINOFF').width;
+      if(FX && !reduced){ s.x += s.vx*dt; s.y += s.vy*dt; let hitX = false, hitY = false;
+        if(s.x < 0){ s.x = 0; s.vx = Math.abs(s.vx); hitX = true; } if(s.x + tw > w){ s.x = w - tw; s.vx = -Math.abs(s.vx); hitX = true; }
+        if(s.y < 0){ s.y = 0; s.vy = Math.abs(s.vy); hitY = true; } if(s.y + 70 > h){ s.y = h - 70; s.vy = -Math.abs(s.vy); hitY = true; }
+        if(hitX || hitY) s.c = (s.c + 1) % 4;
+        if(hitX && hitY){ glitch = Math.max(glitch, .4); scr.flash = now; Sound.blip(900); }
+      } else { s.x = (w - tw)/2; s.y = (h - 70)/2; }
+      x.fillStyle = ['#EDEBE6', '#19F0FF', '#FF2BD6', '#FFB000'][s.c]; x.fillText('SPINOFF', s.x, s.y);
+      if(scr.flash && now - scr.flash < 120){ x.fillStyle = 'rgba(255,255,255,.35)'; x.fillRect(0, 0, w, h); }
+    }
+    if(scr.osd){
+      const n = Math.min(scr.osd.length, Math.floor((now - scr.osdT0)/40) + 1), txt = scr.osd.slice(0, n);
+      x.font = '44px VT323, monospace'; x.textAlign = 'left'; x.textBaseline = 'top'; x.fillStyle = 'rgba(0,0,0,.55)'; x.fillRect(18, 16, x.measureText(txt).width + 20, 44);
+      x.fillStyle = '#39FF88'; x.fillText(txt, 28, 20);
+    }
+    scrTex.needsUpdate = true;
+  }
+  function drawChild(now){
+    const w = chCv.width, h = chCv.height, x = chX; x.fillStyle = '#04050a'; x.fillRect(0, 0, w, h);
+    if(child.mode === 'pilot'){ drawNoise(x, w, h, [60, 60, 60]); x.fillStyle = '#000'; x.fillRect(w*.22, h*.36, w*.56, h*.28); x.fillStyle = '#39FF88'; x.font = '60px VT323, monospace'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('PILOT', w/2, h/2); }
+    chTex.needsUpdate = true;
+  }
+  const setScr = (mode, extra = {}) => { scr = { ...scr, mode, t0: performance.now(), ...extra }; };
+  const setOsd = txt => { scr.osd = txt; scr.osdT0 = performance.now(); };
+  setScr('idle'); drawScreen(performance.now()); drawChild(performance.now());
+
+  /* ---------- tween helper ---------- */
+  const tween = (ms, fn, skippable) => new Promise(res => { const t0 = performance.now(); const step = now => { const k = (skippable && introSkip) ? 1 : Math.min(1, (now - t0)/ms); fn(k); k < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
+  const easeOut = k => 1 - Math.pow(1 - k, 3);
+
+  /* ---------- boot ---------- */
+  // ~5 s intro: DOM warm-up (0 to 2.1 s) -> line expands to a full picture with degauss wobble (0.9 s)
+  // -> colour bars + OSD hold (0.8 s) -> camera eases out to the room (about 1 s). Any key or click skips it.
+  async function powerOn(){
+    const q = ms => (FX && !introSkip) ? ms : Math.min(ms, 120);
+    P1.gm.uniforms.uPower.value = 0; power = 0; powerTarget = 1; Sound.thunk(); Sound.humStart();
+    await tween(q(900), k => { power = k; glitch = FX ? (1 - k)*.5 : 0; }, true);
+    power = 1; glitch = 0; setOsd(C.boot.osd);
+    for(let t = 0; t < q(800) && !introSkip; t += 40) await sleep(40);
+    cam.tgt = HOME; cam.ease = introSkip ? .12 : .06;
+    document.body.classList.remove('intro');
+  }
+
+  /* ---------- API for the app ---------- */
+  room.ready = true;
+  room.fxChanged = () => { if(!FX){ glitch = 0; shake = 0; track = 0; trackTarget = 0; snow = 0; scr.mode === 'saver' && wake(); } };
+  room.select = go => { hoverGo = go; showKeyTip(go); setTimeout(() => { if(hoverGo === go && !pointerOverCanvas) { hoverGo = null; hideTip(); } }, 1800); };
+  room.enter = async from => {
+    if(from){ cam.pos.copy(CLOSE.pos).lerp(HOME.pos, .6); cam.tgt = HOME; cam.ease = .06; setScr('idle'); setOsd(C.boot.osd); P1.gm.uniforms.uPower.value = 1; power = 1; }
+    wake();
+  };
+  room.channel = async k => {
+    const col = hexRgb(k.col);
+    const km = keyMeshes.find(m => m.go === k.go); if(km){ km.target = -.07; setTimeout(() => km.target = 0, 160); }
+    flashIR(); Sound.static();
+    if(FX){
+      await tween(170, q => { power = 1 - easeOut(q); });          // collapse to a line, then a dot
+      power = 0;
+      setScr('static', { tint: col.map(c => c*.9 + 20) }); setOsd(k.osd); power = .6;
+      cam.tgt = { pos: new THREE.Vector3(-.8, 2.4, 2.0), look: new THREE.Vector3(-.8, 2.4, -1.4), fov: 28 }; cam.ease = .16; glitch = .7;
+      await tween(150, q => { power = .6 + .4*q; });
+    }
+    await tune.burst(col, k.osd, 280);
+  };
+  room.setCounter = paintCounter;
+
+  /* ---------- interactions ---------- */
+  const ray = new THREE.Raycaster(), v2 = new THREE.Vector2();
+  let pointerOverCanvas = false, tipEl = $('#tip');
+  function pick(e){
+    const r = canvas.getBoundingClientRect(); v2.set(((e.clientX - r.left)/r.width)*2 - 1, -((e.clientY - r.top)/r.height)*2 + 1);
+    ray.setFromCamera(v2, camera); const hits = ray.intersectObjects(pickables, false);
+    return hits[0] || null;
+  }
+  function showTip(text, x, y){ tipEl.textContent = text; tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px'; tipEl.classList.add('on'); }
+  function hideTip(){ tipEl.classList.remove('on'); }
+  function showKeyTip(go){
+    const k = C.keys.find(k => k.go === go), km = keyMeshes.find(m => m.go === go); if(!k || !km) return;
+    const p = new THREE.Vector3(); km.grp.getWorldPosition(p); p.project(camera);
+    showTip(k.tip, (p.x*.5 + .5)*innerWidth, (-p.y*.5 + .5)*innerHeight);
+  }
+  function wake(){ idleT = performance.now(); if(saver){ saver = false; setScr('idle'); setOsd(''); $('#caption').classList.remove('on'); } }
+  function flashIR(){
+    const a = new THREE.Vector3(), b = new THREE.Vector3(); irw.getWorldPosition(a); P1.screen.getWorldPosition(b);
+    const mid = a.clone().add(b).multiplyScalar(.5); ir.position.copy(mid); ir.scale.set(1, a.distanceTo(b), 1);
+    ir.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); irFlash.position.copy(a);
+    ir.material.opacity = FX ? .8 : 0; irFlash.material.opacity = FX ? 1 : 0;
+  }
+  let lastDown = 0;
+  canvas.addEventListener('pointermove', e => {
+    pointerOverCanvas = true; wake();
+    ptr.nx = (e.clientX/innerWidth)*2 - 1; ptr.ny = (e.clientY/innerHeight)*2 - 1;
+    const dxp = e.clientX - ptr.lx, dyp = e.clientY - ptr.ly; ptr.speed = Math.hypot(dxp, dyp); ptr.lx = e.clientX; ptr.ly = e.clientY;
+    if(dragging && FX){
+      const h = pick(e); if(h && h.object.userData.kind === 'screen' && h.uv) trackY = h.uv.y; trackTarget = 1; glitch = Math.max(glitch, Math.min(.35, ptr.speed*.01));
+      return;
+    }
+    if(antDrag){ antAngle = Math.max(-1.1, Math.min(1.1, antDrag.a0 + (e.clientX - antDrag.x0)*.006)); antV = 0; updateReception(); return; }
+    const h = pick(e), kind = h && h.object.userData.kind; hoverKind = kind || null;
+    canvas.style.cursor = kind ? 'pointer' : 'default';
+    if(kind === 'key'){ hoverGo = h.object.userData.go; showKeyTip(hoverGo); }
+    else { hoverGo = null; if(kind === 'tv' || kind === 'screen') showTip(C.room.tipThump, e.clientX, e.clientY); else if(kind === 'child') showTip(C.room.tipChild, e.clientX, e.clientY); else if(kind === 'antenna'){ showTip(C.room.tipAnt, e.clientX, e.clientY); antV += FX ? (Math.random() < .5 ? -1 : 1)*1.6 : 0; hintAntenna(); } else hideTip(); }
+    if(kind === 'child' && child.mode === 'off') P2.led.material.color.set(0xFFB000); else P2.led.material.color.set(0x7a1d18);
+  });
+  canvas.addEventListener('pointerleave', () => { pointerOverCanvas = false; hoverGo = null; hoverKind = null; hideTip(); P2.led.material.color.set(0x7a1d18); });
+  canvas.addEventListener('pointerdown', e => {
+    wake(); const h = pick(e); if(!h) return; const k = h.object.userData.kind;
+    if(k === 'key'){ goChannel(h.object.userData.go); return; }
+    if(k === 'child'){ childClick(); return; }
+    const t = performance.now();
+    if((k === 'tv' || k === 'screen') && t - lastDown < 340){ thump(); lastDown = 0; return; } lastDown = t;
+    if(k === 'screen' && FX){ dragging = true; canvas.setPointerCapture(e.pointerId); trackY = h.uv ? h.uv.y : .5; trackTarget = 1; Sound.static(); }
+    else if(k === 'antenna'){ antDrag = { x0: e.clientX, a0: antAngle }; canvas.setPointerCapture(e.pointerId); hideTip(); }
+  });
+  const release = () => { if(dragging){ dragging = false; trackTarget = 0; trackV = -3.5; } if(antDrag){ antDrag = null; antRest = performance.now(); } };
+  canvas.addEventListener('pointerup', release); canvas.addEventListener('pointercancel', release);
+  addEventListener('keydown', wake); addEventListener('pointerdown', wake, true);
+  async function thump(){
+    if(!FX || rollT >= 0) return; Sound.thunk(); rollT = performance.now();
+    P1.g.position.x += .05; setTimeout(() => P1.g.position.x -= .05, 90);
+  }
+  async function childClick(){
+    if(child.mode !== 'off') return; child.mode = 'pilot'; P2.gm.uniforms.uPower.value = 1; drawChild(performance.now()); Sound.blip(300);
+    if(FX){ await tween(90, q => P2.gm.uniforms.uPower.value = q); }
+    await sleep(FX ? 380 : 120); await tween(FX ? 120 : 1, q => P2.gm.uniforms.uPower.value = 1 - q);
+    child.mode = 'off'; drawChild(performance.now()); P2.gm.uniforms.uPower.value = 0;
+    goChannel('pitch');
+  }
+  function updateReception(){
+    const d = Math.abs(antAngle - sweet), want = FX ? Math.min(1, Math.max(0, (d - .12)/.55)) : 0;
+    snowT = want;
+    if(d < .1 && !lockedPing){ lockedPing = true; Sound.lock(); }
+    if(d > .35) lockedPing = false;
+  }
+  let hinted = store.get('spinoff-ant-hint', false);
+  function hintAntenna(){ if(hinted || !FX) return; hinted = true; store.set('spinoff-ant-hint', true); const c = $('#caption'); c.textContent = C.room.ant; c.classList.add('on'); setTimeout(() => c.classList.remove('on'), 3200); }
+  setTimeout(() => { if(document.body.dataset.route === 'room') hintAntenna(); }, 9000);
+
+  /* ---------- render loop ---------- */
+  function frame(now){
+    requestAnimationFrame(frame);
+    if(!running || document.hidden){ last = now; return; }
+    const dt = Math.min(.05, (now - last)/1000); last = now; const t = now/1000;
+    // idle -> screensaver
+    if(!saver && ready && now - idleT > 25000){ saver = true; setScr('saver'); setOsd(''); const c = $('#caption'); c.textContent = C.room.saver; c.classList.add('on'); }
+    // camera
+    cam.pos.lerp(cam.tgt.pos, 1 - Math.pow(1 - cam.ease, dt*60)); cam.look.lerp(cam.tgt.look, 1 - Math.pow(1 - cam.ease, dt*60)); cam.fov += (cam.tgt.fov - cam.fov)*(1 - Math.pow(1 - cam.ease, dt*60));
+    const sx = FX ? ptr.nx*.35 : 0, sy = FX ? ptr.ny*.14 : 0, sh = FX && shake ? (Math.random() - .5)*shake : 0;
+    camera.position.set(cam.pos.x + sx + sh, cam.pos.y - sy, cam.pos.z); camera.lookAt(cam.look.x, cam.look.y, cam.look.z);
+    if(camera.fov !== cam.fov){ camera.fov = cam.fov; camera.updateProjectionMatrix(); }
+    // antenna spring
+    if(!antDrag){
+      if(antRest && now - antRest > 2200) antV += (sweet - antAngle)*40*dt;
+      antV += (-antAngle*0 )*dt; antV *= Math.pow(.02, dt); antAngle += antV*dt*.5; if(Math.abs(antAngle) > 1.1) antAngle = Math.sign(antAngle)*1.1;
+      if(antRest && now - antRest > 2200){ antAngle += (sweet - antAngle)*Math.min(1, dt*2.2); if(Math.abs(antAngle - sweet) < .01) antRest = 0; }
+      updateReception();
+    }
+    P1.ears.forEach(e => { e.rotation.z = -e.userData.s*(.45 + antAngle*.35) + antAngle*.25; e.rotation.x = e.userData.s*.12; });
+    snow += (snowT - snow)*Math.min(1, dt*6);
+    // track spring
+    if(!dragging){ trackV += (-track*90 - trackV*9)*dt; track += trackV*dt; if(Math.abs(track) < .002 && Math.abs(trackV) < .02){ track = 0; trackV = 0; } }
+    else track += (trackTarget - track)*Math.min(1, dt*18);
+    // vertical hold roll
+    if(rollT >= 0){ const k = (now - rollT)/700; if(k >= 1){ roll = 0; rollT = -1; } else roll = easeOut(k)*(1 - 0); }
+    glitch *= Math.pow(.0008, dt); if(glitch < .01) glitch = 0;
+    const g = FX ? glitch + Math.min(.12, ptr.speed*.002) : 0; ptr.speed *= .8;
+    // screen
+    scrAcc += dt;
+    const live = scr.mode === 'static' || scr.mode === 'saver' || scr.osd;
+    if(live && scrAcc > .066){ scrAcc = 0; drawScreen(now); }
+    if(scr.mode === 'static' && now - scr.t0 > 900 && !dragging) {}
+    const u = P1.gm.uniforms;
+    u.uTime.value = t; u.uGlitch.value = g; u.uChroma.value = FX ? .0015 + g*.004 : .0008; u.uRoll.value = roll; u.uTrackY.value = trackY; u.uTrack.value = FX ? track : 0; u.uPower.value = Math.max(0, power); u.uSnow.value = snow;
+    const u2 = P2.gm.uniforms; u2.uTime.value = t; u2.uGlitch.value = child.mode === 'pilot' ? .4 : 0;
+    postU.uGlitch.value = g; postU.uTime.value = t;
+    // lights follow the picture
+    const bright = .78 + .22*Math.sin(t*37)*(FX ? 1 : 0)*.3 + (scr.mode === 'static' ? .3 : 0);
+    const tintC = scr.mode === 'static' ? scr.tint : [150, 220, 255];
+    lamp.color.setRGB(tintC[0]/255, tintC[1]/255, tintC[2]/255); lamp.intensity = 24*Math.max(.05, power)*bright; coneMat.uniforms.uCol.value.copy(lamp.color);
+    coneMat.uniforms.uA.value = .16*power*(FX ? .92 + .08*Math.sin(t*23) : 1); floorGlow.material.opacity = .22*power; floorGlow.material.color.copy(lamp.color);
+    P1.led.material.color.set(power > .5 ? 0x39FF88 : 0x7a1d18);
+    // remote keys
+    keyMeshes.forEach(km => { const want = km.go === hoverGo ? -.04 : 0; const tgt = km.target < 0 ? km.target : want; km.v += (tgt - km.y)*220*dt - km.v*18*dt; km.y += km.v*dt; km.grp.position.y = .16 + km.y; });
+    ir.material.opacity *= Math.pow(.0003, dt); irFlash.material.opacity *= Math.pow(.0003, dt);
+    // dust
+    const p = dgeo.attributes.position;
+    for(let i = 0; i < NDUST; i++){ p.array[i*3] += dvel[i][0]*dt; p.array[i*3+1] += dvel[i][1]*dt; p.array[i*3+2] += dvel[i][2]*dt; if(p.array[i*3+1] > 5) p.array[i*3+1] = .3; }
+    p.needsUpdate = true;
+    P1.knob.rotation.y = 0;
+    composer ? composer.render() : renderer.render(scene, camera);
+    if(!ready){ ready = true; }
+  }
+  requestAnimationFrame(frame);
+  // let the first frames compile, then reveal and power on
+  await sleep(120);   // let the first frames compile
+  const hold = FX ? 2100 : 300;
+  while(!introSkip && performance.now() - bootT0 < hold) await sleep(40);
+  finishBoot(); await sleep(introSkip ? 0 : 250);
+  powerOn();
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+{
+  $('#bootL1').textContent = C.boot.l1; $('#bootL2').textContent = C.boot.l2;
+  $('#heroL1').textContent = C.room.l1; $('#heroL2').textContent = C.room.l2; $('#heroSub').textContent = C.room.sub; $('#hint').textContent = C.room.hint;
+  $('#fbLine').textContent = '';
+  $('#nav').innerHTML = C.chrome.nav.map(([r, t]) => `<a href="#/${r}" data-r="${r}">${t}</a>`).join('');
+  $('#wmT').textContent = C.chrome.wmT; $('#wmP').textContent = C.chrome.wmP;
+  $('#keys').innerHTML = visibleKeys().map(k => `<li><button class="key" data-go="${k.go}" aria-label="${esc(k.aria)}" title="${esc(k.tip)}">${k.label}</button></li>`).join('');
+  $('#keys').addEventListener('click', e => { const b = e.target.closest('.key'); if(b) goChannel(b.dataset.go); });
+  $('#keys').addEventListener('focusin', e => { const b = e.target.closest('.key'); if(b && room.select) room.select(b.dataset.go); });
+  document.body.classList.toggle('domkeys', isNarrow());
+  $$('.page .main').forEach(m => m.insertAdjacentHTML('beforeend', footHtml()));
+
+  // sound + fx toggles
+  const sb = $('#soundBtn');
+  const paintSound = () => { sb.textContent = Sound.on ? C.room.soundOn : C.room.soundOff; sb.setAttribute('aria-pressed', Sound.on); sb.setAttribute('aria-label', Sound.on ? 'Turn sound off' : 'Turn sound on'); };
+  Sound.set(false); paintSound();
+  sb.addEventListener('click', e => { e.stopPropagation(); Sound.set(!Sound.on); store.set('spinoff-sound', Sound.on); paintSound(); if(Sound.on){ Sound.chime(); Sound.humStart(); } });
+  $('#fxBtn').addEventListener('click', e => { e.stopPropagation(); FX = !FX; store.set('spinoff-fx', FX); applyFx(); });
+  applyFx(); paintCounter(); paintWallet();
+  addEventListener('storage', () => { try{ pitches = store.get('spinoff-pitches', []); samples = store.get('spinoff-samples', []); paintCounter(); }catch(e){} });
+  addEventListener('beforeunload', () => Sound.humStop());
+  document.addEventListener('visibilitychange', () => { if(document.hidden) Sound.humStop(); });
+
+  // 404 for unknown routes
+  if(!currentRoute()){ document.body.classList.add('intro'); setTimeout(() => document.body.classList.remove('intro'), 14000); }   // room UI waits for the TV to warm up
+  $('#e404Osd').textContent = C.e404.osd; $('#e404Line').textContent = C.e404.line; $('#e404Btn').textContent = C.e404.btn;
+  route();
+  if(document.body.dataset.route !== 'room') setTimeout(() => { const b = $('#boot'); if(b){ b.classList.add('done'); setTimeout(() => b.remove(), 600); } }, 350);
+  setTimeout(() => { const b = $('#boot'); if(b && !b.classList.contains('done')){ b.classList.add('done'); setTimeout(() => b.remove(), 600); } }, 9000);
+}
+</script>
+</body>
+</html>

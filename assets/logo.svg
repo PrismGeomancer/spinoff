@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Spinoff logo">
+  
+  <g fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M60 42 L38 16 M60 42 L82 16" stroke="#EDEBE6"/>
+    <rect x="14" y="40" width="76" height="62" rx="18" stroke="#19F0FF"/>
+    <rect x="38" y="40" width="76" height="62" rx="18" stroke="#FF2BD6"/>
+    <rect x="26" y="40" width="76" height="62" rx="18" stroke="#EDEBE6" fill="#07080C"/>
+  </g>
+</svg>

@@ -1,0 +1,11 @@
+{
+  "name": "spinoff-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Spinoff: every hit gets a spinoff. Static site, no build step.",
+  "scripts": {
+    "test": "node --test",
+    "dev": "npx serve ."
+  }
+}
